@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Beginner Interop Demo (HTML + JS)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <h1>HTML + JavaScript + Node + Python</h1>
+  <button id="btn-os">Get OS Info</button>
+  <pre id="out-os">...</pre>
+
+  <h3>Sum with Python</h3>
+  <input id="a" type="number" value="2" /> +
+  <input id="b" type="number" value="3" />
+  <button id="btn-sum">Compute</button>
+  <pre id="out-sum">...</pre>
+
+  <script>
+    const OS_URL  = 'http://localhost:3000/api/os';
+    const SUM_URL = 'http://localhost:3000/api/sum';
+
+    document.getElementById('btn-os').onclick = async () => {
+      const res = await fetch(OS_URL);
+      const data = await res.json();
+      document.getElementById('out-os').textContent = JSON.stringify(data, null, 2);
+    };
+
+    document.getElementById('btn-sum').onclick = async () => {
+      const a = document.getElementById('a').value;
+      const b = document.getElementById('b').value;
+      const res = await fetch(`${SUM_URL}?a=${a}&b=${b}`);
+      const data = await res.json();
+      document.getElementById('out-sum').textContent = JSON.stringify(data, null, 2);
+    };
+  </script>
+</body>
+</html>
