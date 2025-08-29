@@ -1,0 +1,14 @@
+{
+  "name": "Week4 Extension Lab",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+  "postCreateCommand": "npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  },
+  "features": {}
+}
