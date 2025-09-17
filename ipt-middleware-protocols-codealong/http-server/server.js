@@ -13,6 +13,7 @@ app.use(express.json());
 // Logging middleware (morgan) + custom request id
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 app.use((req, res, next) => {
+  // Add a simple request ID for tracing
   req.requestId = Math.random().toString(36).slice(2, 8);
   console.log(`[req:${req.requestId}] headers=`, req.headers);
   next();
