@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch HTTP Server",
+      "program": "${workspaceFolder}/http-server/server.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch WS Server",
+      "program": "${workspaceFolder}/ws-server/server.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch gRPC Server",
+      "program": "${workspaceFolder}/grpc-service/server.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run gRPC Client",
+      "program": "${workspaceFolder}/grpc-service/client.js",
+      "args": [
+        "Student"
+      ]
+    }
+  ]
+}

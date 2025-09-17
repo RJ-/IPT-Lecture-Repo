@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Middleware Protocols Demo",
+    "_postman_id": "1234-5678-demo",
+    "description": "HTTP and gRPC test requests for Week 7 Code-Along",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "HTTP Hello",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/hello",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "hello"
+          ]
+        }
+      }
+    },
+    {
+      "name": "HTTP Echo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"PSU\"}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/echo",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "echo"
+          ]
+        }
+      }
+    },
+    {
+      "name": "HTTP Secure Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "demo-key"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3000/api/secure/profile",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "secure",
+            "profile"
+          ]
+        }
+      }
+    }
+  ]
+}
