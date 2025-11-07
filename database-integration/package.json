@@ -1,0 +1,25 @@
+{
+  "name": "ipt",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RJ-/IPT-Lecture-Repo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RJ-/IPT-Lecture-Repo/issues"
+  },
+  "homepage": "https://github.com/RJ-/IPT-Lecture-Repo#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongodb": "^6.20.0",
+    "mysql2": "^3.15.3"
+  }
+}

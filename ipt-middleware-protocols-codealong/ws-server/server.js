@@ -16,7 +16,7 @@ const server = http.createServer(app);
 // Attach WebSocket server to HTTP server
 const wss = new WebSocketServer({ server });
 
-const PORT = 3001;
+const PORT = 3001; 
 
 // Serve the demo client
 app.use(express.static(path.join(__dirname, 'public')));
