@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 3 · Arrays, Objects & JSON — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="l3">
+<div id="content">
+
+<p class="lesson-kicker">Lesson 3 · Part A · JavaScript Essentials</p>
+<h1>Arrays, Objects &amp; JSON</h1>
+<p class="lede">Real systems move <i>records</i> around — students, orders, readings from a sensor. How does JavaScript hold them, transform them, and send them to another system?</p>
+<div class="meta-row"><span class="chip">⏱ about 50 minutes</span><span class="chip week">Outline Weeks 2 &amp; 11 · Functional style, data exchange</span></div>
+
+<div class="box objectives">
+  <span class="box-title">By the end of this lesson you can</span>
+  <ul>
+    <li>Create arrays, read items by index, and add or remove items.</li>
+    <li>Create objects with properties and read them with dot and bracket notation.</li>
+    <li>Work with an <b>array of objects</b> — the shape of almost all real data.</li>
+    <li>Transform data with <code>forEach</code>, <code>map</code>, <code>filter</code>, <code>find</code> and <code>reduce</code>.</li>
+    <li>Convert between objects and <b>JSON</b> text, and explain why JSON is the common language of integration.</li>
+  </ul>
+</div>
+
+<h2>3.1 Arrays: ordered lists</h2>
+<p>An array holds many values in order. Unlike a Java array, a JavaScript array can <b>grow and shrink</b> (it behaves more like Java's <code>ArrayList</code>), and it can even mix types.</p>
+
+<div class="play" data-title="Try it · array basics">
+<textarea>
+const scores = [85, 92, 78];
+
+console.log(scores[0]);        // first item — indexes start at 0
+console.log(scores.length);    // 3
+
+scores.push(88);               // add to the end
+console.log(scores);
+
+const last = scores.pop();     // remove from the end
+console.log("Removed", last, "→", scores);
+
+console.log(scores.includes(92));   // true
+console.log(scores.indexOf(78));    // 2
+console.log(scores.join(" | "));    // "85 | 92 | 78"
+</textarea>
+</div>
+
+<div class="box note">
+  <span class="box-title">const and arrays</span>
+  <p><code>const scores = [...]</code> means the label <code>scores</code> always points to <i>the same array</i>. You can still <code>push</code> into it or change its items. What you cannot do is <code>scores = [1, 2]</code> (point the label at a different array).</p>
+</div>
+
+<h2>3.2 Objects: one record with named fields</h2>
+<p>An object groups related values under <b>property names</b> (also called keys). In Java you would write a whole class for this; in JavaScript you can just write the object directly with curly braces.</p>
+
+<div class="play" data-title="Try it · object basics">
+<textarea>
+const student = {
+  id: 2401,
+  name: "Maria Santos",
+  section: "BSIT 2A",
+  isEnrolled: true,
+  subjects: ["IPT1", "Java", "Networking"]
+};
+
+console.log(student.name);            // dot notation
+console.log(student["section"]);      // bracket notation
+console.log(student.subjects[0]);     // property that is an array
+
+student.email = "maria@example.com";  // add a new property
+student.section = "BSIT 2B";          // change one
+delete student.isEnrolled;            // remove one
+
+console.log(student);
+console.log(Object.keys(student));    // list of property names
+</textarea>
+</div>
+
+<details class="think">
+  <summary>When would you need bracket notation <code>student[key]</code> instead of <code>student.key</code>?</summary>
+  <div><p>When the property name is stored in a <b>variable</b>, or has a space or dash in it. For example, <code>const field = "name"; console.log(student[field]);</code> reads <code>student.name</code>. Writing <code>student.field</code> would look for a property literally called "field".</p></div>
+</details>
+
+<h3>Objects can hold functions (methods)</h3>
+<p>This is JavaScript's object-oriented side. A function stored in an object is called a <b>method</b>; inside it, <code>this</code> refers to the object.</p>
+<textarea class="code" data-lang="js">
+const counter = {
+  count: 0,
+  increment() {          // short method syntax
+    this.count++;
+    return this.count;
+  }
+};
+counter.increment();
+counter.increment();
+console.log(counter.count);   // 2
+</textarea>
+<p>JavaScript also has <code>class</code> syntax that will feel familiar from Java (<code>class Student { constructor(name) { this.name = name; } }</code>). We will not need it in this module, but you will see it in frameworks.</p>
+
+<h3>Destructuring and spread (you will see these in every framework)</h3>
+<div class="play" data-title="Try it · destructuring and spread">
+<textarea>
+const student = { name: "Leo", section: "BSIT 2B", year: 2 };
+
+// Destructuring: pull properties out into variables
+const { name, section } = student;
+console.log(name, section);
+
+// Spread: copy an object and change one thing
+const promoted = { ...student, year: 3 };
+console.log(student.year, "→", promoted.year);   // original is unchanged
+
+// Spread works on arrays too
+const a = [1, 2];
+const b = [...a, 3, 4];
+console.log(b);
+</textarea>
+</div>
+
+<h2>3.3 Arrays of objects — the shape of real data</h2>
+<p>A list of students, a list of orders, a list of posts: almost every API returns an <b>array of objects</b>. Learn to read this shape at a glance.</p>
+
+<textarea class="code" data-lang="js">
+const students = [
+  { id: 1, name: "Ana",   section: "2A", grade: 91 },
+  { id: 2, name: "Ben",   section: "2B", grade: 72 },
+  { id: 3, name: "Carla", section: "2A", grade: 85 },
+  { id: 4, name: "Dan",   section: "2B", grade: 79 }
+];
+// students[2].name  →  "Carla"
+// students.length   →  4
+</textarea>
+
+<h2>3.4 Transforming data: <code>forEach</code>, <code>map</code>, <code>filter</code>, <code>find</code>, <code>reduce</code></h2>
+<p>Remember callbacks from Lesson 2? Arrays come with built-in methods that take a callback and apply it to every item. This is the <b>functional</b> style: instead of writing a loop and a temporary variable, you describe <i>what</i> you want.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Method</th><th>What it gives back</th><th>Plain-English question</th></tr></thead>
+  <tbody>
+    <tr><td><code>forEach(fn)</code></td><td>nothing — just does something for each item</td><td>"Do this to every item."</td></tr>
+    <tr><td><code>map(fn)</code></td><td>a <b>new array</b> of the same length</td><td>"Turn each item into something else."</td></tr>
+    <tr><td><code>filter(fn)</code></td><td>a <b>new, shorter array</b></td><td>"Keep only the items that pass."</td></tr>
+    <tr><td><code>find(fn)</code></td><td>the <b>first item</b> that passes (or <code>undefined</code>)</td><td>"Which one matches?"</td></tr>
+    <tr><td><code>reduce(fn, start)</code></td><td><b>one value</b></td><td>"Combine everything into a single result."</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="play" data-title="Try it · map, filter, find, reduce">
+<textarea>
+const students = [
+  { id: 1, name: "Ana",   section: "2A", grade: 91 },
+  { id: 2, name: "Ben",   section: "2B", grade: 72 },
+  { id: 3, name: "Carla", section: "2A", grade: 85 },
+  { id: 4, name: "Dan",   section: "2B", grade: 79 }
+];
+
+// forEach — do something for each
+students.forEach(s => console.log(`${s.name}: ${s.grade}`));
+
+// map — just the names
+const names = students.map(s => s.name);
+console.log(names);
+
+// filter — only those who passed (75 and up)
+const passed = students.filter(s => s.grade >= 75);
+console.log(passed.length, "passed");
+
+// find — look up one record by id
+const found = students.find(s => s.id === 3);
+console.log(found);
+
+// reduce — total, then average
+const total = students.reduce((sum, s) => sum + s.grade, 0);
+console.log("Average:", total / students.length);
+
+// chaining: names of 2A students who passed
+console.log(
+  students.filter(s => s.section === "2A" && s.grade >= 75).map(s => s.name)
+);
+
+console.table(students);
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 9</b> <code>s =&gt; …</code> is an arrow function. <code>forEach</code> calls it once per student, passing the student in as <code>s</code>.</li>
+  <li><b>line 12</b> <code>map</code> returns a new array: <code>["Ana", "Ben", "Carla", "Dan"]</code>. The original array is not changed.</li>
+  <li><b>line 16</b> The callback returns <code>true</code> or <code>false</code>; <code>filter</code> keeps the <code>true</code> ones.</li>
+  <li><b>line 24</b> <code>reduce</code> carries a running value (<code>sum</code>) through the list, starting at <code>0</code>.</li>
+  <li><b>line 29</b> Because <code>filter</code> returns an array, you can call <code>.map</code> right after it. This is called <b>chaining</b>.</li>
+</ul>
+
+<details class="think">
+  <summary>Rewrite <code>students.filter(s =&gt; s.grade &gt;= 75)</code> as a regular <code>for…of</code> loop. Which version is easier to read?</summary>
+  <div>
+<textarea class="code" data-lang="js">
+const passed = [];
+for (const s of students) {
+  if (s.grade >= 75) {
+    passed.push(s);
+  }
+}
+</textarea>
+  <p>Both work. The <code>filter</code> version says <i>what</i> you want in one line; the loop says <i>how</i> to do it step by step. Professional JavaScript code — and frameworks like React — strongly favour <code>map</code> and <code>filter</code>.</p>
+  </div>
+</details>
+
+<div class="box tip">
+  <span class="box-title">Your turn</span>
+  <p>In the box above, add code to: (1) find the student with the highest grade, and (2) make an array of strings like <code>"Ana (2A)"</code>. Hint for (1): <code>reduce((best, s) =&gt; s.grade &gt; best.grade ? s : best)</code>.</p>
+</div>
+
+<h2>3.5 JSON — the common language of integration</h2>
+<p>Here is the integration problem: a JavaScript front end has a <code>students</code> array. It needs to send it to a server that might be written in Python, PHP, Java or C#. Those languages cannot read JavaScript objects directly. They need a <b>text format</b> that every language understands.</p>
+<p>That format is <b>JSON</b> — JavaScript Object Notation. It looks almost exactly like a JavaScript object, but it is <b>plain text</b>, with a few stricter rules:</p>
+<ul>
+  <li>Property names <b>must</b> be in double quotes: <code>"name"</code>.</li>
+  <li>Strings use double quotes only.</li>
+  <li>Allowed values: string, number, <code>true</code>/<code>false</code>, <code>null</code>, arrays, objects. <b>No functions, no <code>undefined</code>, no comments.</b></li>
+</ul>
+
+<textarea class="code" data-lang="js" data-file="students.json">
+[
+  { "id": 1, "name": "Ana", "section": "2A", "grade": 91 },
+  { "id": 2, "name": "Ben", "section": "2B", "grade": 72 }
+]
+</textarea>
+
+<div class="flow">
+  <div class="node"><b>JS object</b>in memory</div>
+  <div class="arrow">→</div>
+  <div class="node"><b>JSON.stringify()</b>object → text</div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Network</b>text travels</div>
+  <div class="arrow">→</div>
+  <div class="node"><b>JSON.parse()</b>text → object</div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Any language</b>Python, Java, PHP…</div>
+</div>
+
+<div class="play" data-title="Try it · stringify and parse">
+<textarea>
+const student = { id: 1, name: "Ana", grade: 91, passed: true };
+
+// Object → JSON text (what we SEND)
+const text = JSON.stringify(student);
+console.log(text);
+console.log(typeof text);          // "string"
+
+// Pretty-printed, easier for humans
+console.log(JSON.stringify(student, null, 2));
+
+// JSON text → object (what we RECEIVE)
+const received = '{"id":7,"name":"Ben","grade":72}';
+const obj = JSON.parse(received);
+console.log(obj.name, obj.grade + 3);   // a real object now — math works
+
+// Invalid JSON throws an error — single quotes are not allowed in JSON
+try {
+  JSON.parse("{'name': 'Bad'}");
+} catch (err) {
+  console.error("Could not parse:", err.message);
+}
+</textarea>
+</div>
+
+<div class="box analogy">
+  <span class="box-title">Everyday analogy</span>
+  <p>A JavaScript object is like furniture assembled in your room. You cannot ship it through a narrow door, so you <b>flat-pack</b> it into a box with instructions (<code>JSON.stringify</code>). The receiver — who may speak a different language, but reads the same standard instructions — <b>assembles</b> it again (<code>JSON.parse</code>).</p>
+</div>
+
+<details class="think">
+  <summary>A Python back end receives <code>{"grade": "91"}</code> and another receives <code>{"grade": 91}</code>. Are these the same data?</summary>
+  <div><p>No. In the first, <code>grade</code> is a <b>string</b>; in the second, it is a <b>number</b>. JSON keeps the type. Teams that integrate systems agree on a <b>data contract</b> — the exact field names and types — so both sides read the data the same way.</p></div>
+</details>
+
+<h2>Summary</h2>
+<ul>
+  <li>Arrays are ordered, growable lists: <code>push</code>, <code>pop</code>, <code>length</code>, <code>includes</code>.</li>
+  <li>Objects are records with named properties; read them with <code>obj.key</code> or <code>obj[key]</code>.</li>
+  <li>Real data is usually an <b>array of objects</b>.</li>
+  <li><code>map</code> transforms, <code>filter</code> keeps, <code>find</code> picks one, <code>reduce</code> combines, <code>forEach</code> just does.</li>
+  <li><b>JSON</b> is text that any language can read. <code>JSON.stringify</code> to send, <code>JSON.parse</code> to receive.</li>
+</ul>
+
+<div class="quiz" data-id="l3" id="quiz">
+  <div class="q" data-answer="1">
+    <p>Given <code>const s = ["a", "b", "c"]</code>, what is <code>s[1]</code>?</p>
+    <ul><li><code>"a"</code></li><li><code>"b"</code></li><li><code>"c"</code></li><li><code>undefined</code></li></ul>
+    <p class="why">Indexes start at 0, so index 1 is the second item.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>Which method returns a <b>new array of the same length</b> with each item transformed?</p>
+    <ul><li><code>filter</code></li><li><code>find</code></li><li><code>forEach</code></li><li><code>map</code></li></ul>
+    <p class="why"><code>map</code> transforms every item and returns a new array with the same number of items.</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>What does <code>[5, 80, 92, 60].filter(n =&gt; n &gt;= 75)</code> return?</p>
+    <ul><li><code>[80, 92]</code></li><li><code>[5, 60]</code></li><li><code>80</code></li><li><code>true</code></li></ul>
+    <p class="why"><code>filter</code> keeps every item for which the callback returns <code>true</code>.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>Which of these is <b>valid JSON</b>?</p>
+    <ul><li><code>{name: "Ana"}</code></li><li><code>{'name': 'Ana'}</code></li><li><code>{"name": "Ana", "grade": 91}</code></li><li><code>{"name": "Ana", greet() {}}</code></li></ul>
+    <p class="why">JSON requires double-quoted property names and strings, and cannot contain functions.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>Your front end must send an object to a Java server. Which call turns the object into text first?</p>
+    <ul><li><code>JSON.parse(obj)</code></li><li><code>JSON.stringify(obj)</code></li><li><code>obj.toJSON()</code></li><li><code>String.parse(obj)</code></li></ul>
+    <p class="why"><code>stringify</code> converts an object to JSON text for sending; <code>parse</code> does the reverse on the receiving side.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>Why is JSON so important in integrative programming?</p>
+    <ul>
+      <li>It makes JavaScript run faster.</li>
+      <li>It can only be read by JavaScript, which keeps data safe.</li>
+      <li>It stores data in a database automatically.</li>
+      <li>It is a plain-text format that systems written in different languages can all read and write.</li>
+    </ul>
+    <p class="why">JSON is language-neutral text. That makes it the default format for APIs that connect different systems.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

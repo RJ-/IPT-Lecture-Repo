@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 1 · Meet JavaScript — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="l1">
+<div id="content">
+
+<p class="lesson-kicker">Lesson 1 · Part A · JavaScript Essentials</p>
+<h1>Meet JavaScript</h1>
+<p class="lede">What is this language that runs on almost every device you own — and how is it different from the C++ and Java you already know?</p>
+<div class="meta-row"><span class="chip">⏱ about 45 minutes</span><span class="chip week">Outline Week 2 · Multi-paradigm programming</span></div>
+
+<div class="box objectives">
+  <span class="box-title">By the end of this lesson you can</span>
+  <ul>
+    <li>Name four places where JavaScript runs and explain why that matters for integration.</li>
+    <li>Print output with <code>console.log()</code> and write comments.</li>
+    <li>Declare variables with <code>let</code> and <code>const</code>, and choose the right one.</li>
+    <li>Identify the basic data types and check them with <code>typeof</code>.</li>
+    <li>Use arithmetic, comparison and logical operators — and explain why we use <code>===</code>, not <code>==</code>.</li>
+    <li>Build strings with template literals.</li>
+  </ul>
+</div>
+
+<h2>1.1 Why JavaScript, and why in IPT1?</h2>
+<p>JavaScript was created in 1995 by Brendan Eich at Netscape — famously in about ten days — to make web pages interactive. For years it lived only inside the browser. Today it runs almost everywhere:</p>
+
+<div class="flow">
+  <div class="node"><b>Browser</b>every web page you open</div>
+  <div class="node"><b>Server</b>Node.js APIs and microservices</div>
+  <div class="node"><b>Mobile</b>React Native apps</div>
+  <div class="node"><b>Cloud</b>serverless functions (AWS Lambda)</div>
+  <div class="node"><b>Desktop</b>VS Code, Discord, Slack (Electron)</div>
+</div>
+
+<p>That is exactly why it matters in <b>Integrative Programming</b>. Integration is about making different parts of a system talk to each other. When the front end, the back end, the mobile app and the cloud function are <i>all</i> written in JavaScript, a team can share code, share data formats, and move between layers without learning a new language each time.</p>
+
+<div class="box note">
+  <span class="box-title">Not the same as Java</span>
+  <p>JavaScript and Java share four letters and some curly-brace syntax, and that is about all. The name was a marketing decision in 1995, when Java was popular. The official standard for the language is called <b>ECMAScript</b> — you will see names like "ES6" or "ES2015" for the modern version we use in this module.</p>
+</div>
+
+<h2>1.2 Your first line: <code>console.log()</code></h2>
+<p>In C++ you print with <code>cout</code>; in Java with <code>System.out.println()</code>. In JavaScript you use <code>console.log()</code>. Press <b>▶ Run</b> below.</p>
+
+<div class="play" data-title="Try it · Hello, Partido">
+<textarea>
+// This is a comment. JavaScript ignores it.
+console.log("Hello, Partido State University!");
+console.log("1 + 2 =", 1 + 2);   // you can print several things, separated by commas
+
+/* This is a
+   multi-line comment. */
+console.log("Done.");
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 1</b> <code>//</code> starts a one-line comment — same as C++ and Java.</li>
+  <li><b>line 2</b> Text inside quotes is a <b>string</b>. You may use double quotes <code>"…"</code> or single quotes <code>'…'</code>.</li>
+  <li><b>line 3</b> Commas let you print several values on one line. JavaScript computes <code>1 + 2</code> first.</li>
+  <li><b>line 5–6</b> <code>/* … */</code> is a multi-line comment.</li>
+</ul>
+
+<p>Notice what is <i>missing</i> compared with Java: no <code>class</code>, no <code>public static void main</code>, no compiling. JavaScript runs top to bottom, line by line. Semicolons at the end of lines are optional in most cases, but we will always write them — it is a good habit and avoids rare bugs.</p>
+
+<div class="box tip">
+  <span class="box-title">Your turn</span>
+  <p>Change the message to print your name and section, then press Run again. Then delete one closing quote <code>"</code> and run it — read the error. Errors are messages, not punishments.</p>
+</div>
+
+<h2>1.3 Variables: <code>let</code> and <code>const</code></h2>
+<p>A variable is a labelled box that holds a value. In Java you must say what <i>type</i> goes in the box: <code>int age = 19;</code>. In JavaScript you only say whether the box can be <b>changed later</b>:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Keyword</th><th>Meaning</th><th>Use it when…</th></tr></thead>
+  <tbody>
+    <tr><td><code>const</code></td><td>The label can never point to a new value.</td><td><b>Default choice.</b> Most values never need to change.</td></tr>
+    <tr><td><code>let</code></td><td>The value can be reassigned.</td><td>Counters, totals, anything that changes.</td></tr>
+    <tr><td><code>var</code></td><td>The old (pre-2015) way.</td><td>Avoid it. You will see it in old code online — read it as "let, with surprises".</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="play" data-title="Try it · let vs const">
+<textarea>
+const school = "Partido State University";
+let enrolled = 40;
+
+console.log(school, "has", enrolled, "students in this section.");
+
+enrolled = enrolled + 2;       // two transferees joined
+console.log("Now:", enrolled);
+
+// Remove the // on the next line and press Run. What happens?
+// school = "Another School";
+</textarea>
+</div>
+
+<details class="think">
+  <summary>Why should <code>const</code> be your default, if <code>let</code> can do everything <code>const</code> can?</summary>
+  <div><p>Because <code>const</code> is a promise to the reader (and to your future self): "this value will not change." When you see <code>let</code>, you know to watch for a change somewhere below. Fewer moving parts means fewer bugs. If you uncomment the last line above, you get <code>TypeError: Assignment to constant variable</code> — JavaScript protects the promise for you.</p></div>
+</details>
+
+<p><b>Naming rules</b> are similar to Java: start with a letter, <code>_</code> or <code>$</code>; no spaces; case-sensitive (<code>total</code> and <code>Total</code> are different). The JavaScript convention is <b>camelCase</b>: <code>studentName</code>, <code>finalGrade</code>, <code>isEnrolled</code>.</p>
+
+<h2>1.4 Data types</h2>
+<p>JavaScript is <b>dynamically typed</b>: the <i>value</i> has a type, but the <i>variable</i> does not. The same <code>let</code> box can hold a number now and a string later. (Java would refuse to compile that.)</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Type</th><th>Examples</th><th>Java/C++ cousin</th></tr></thead>
+  <tbody>
+    <tr><td><b>number</b></td><td><code>19</code>, <code>3.75</code>, <code>-2</code></td><td><code>int</code> and <code>double</code> combined — JavaScript has one number type</td></tr>
+    <tr><td><b>string</b></td><td><code>"BSIT"</code>, <code>'2A'</code>, <code>`hi`</code></td><td><code>String</code></td></tr>
+    <tr><td><b>boolean</b></td><td><code>true</code>, <code>false</code></td><td><code>boolean</code> / <code>bool</code></td></tr>
+    <tr><td><b>undefined</b></td><td>a variable that was declared but never given a value</td><td>—</td></tr>
+    <tr><td><b>null</b></td><td>"intentionally empty"</td><td><code>null</code></td></tr>
+    <tr><td><b>object</b></td><td><code>{ name: "Ana" }</code>, <code>[1, 2, 3]</code></td><td>objects and arrays (Lesson 3)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="play" data-title="Try it · typeof">
+<textarea>
+let thing = 19;
+console.log(thing, "is a", typeof thing);
+
+thing = "nineteen";
+console.log(thing, "is a", typeof thing);
+
+thing = true;
+console.log(thing, "is a", typeof thing);
+
+let nothingYet;
+console.log(nothingYet, "is", typeof nothingYet);
+
+console.log(0.1 + 0.2);   // surprise! (same in Java's double)
+</textarea>
+</div>
+
+<div class="box java">
+  <span class="box-title">If you think in Java</span>
+  <p><code>int x = 5; x = "five";</code> → compile error in Java.<br><code>let x = 5; x = "five";</code> → perfectly legal in JavaScript.</p>
+  <p>This freedom is convenient, but it also means some mistakes only show up when the code runs. That is one reason many teams add <b>TypeScript</b> (JavaScript plus type annotations) on large projects.</p>
+</div>
+
+<h2>1.5 Operators</h2>
+<p>Arithmetic works like you expect: <code>+ - * /</code>, plus <code>%</code> (remainder) and <code>**</code> (power). There is no separate integer division: <code>7 / 2</code> is <code>3.5</code>, not <code>3</code>.</p>
+
+<h3>The <code>+</code> trap: numbers vs strings</h3>
+<p>When <code>+</code> sees a string on either side, it <b>joins</b> instead of adds. This matters a lot when data comes from a form or a web request, because that data usually arrives as text.</p>
+
+<div class="play" data-title="Try it · + joins or adds?">
+<textarea>
+console.log(7 / 2);          // 3.5
+console.log(7 % 2);          // 1  (remainder)
+console.log(2 ** 3);         // 8
+
+console.log(5 + 5);          // 10
+console.log("5" + 5);        // "55"  ← joined, not added!
+console.log("5" * 2);        // 10    ← * converts to number
+
+const fromForm = "85";       // text typed in a form
+console.log(fromForm + 10);          // ?
+console.log(Number(fromForm) + 10);  // convert first
+</textarea>
+</div>
+
+<h3>Comparison: always use <code>===</code></h3>
+<p>JavaScript has two equality operators. <code>==</code> ("loose") converts types before comparing, which produces strange results. <code>===</code> ("strict") checks that both the value <i>and</i> the type match. <b>Use <code>===</code> and <code>!==</code> every time.</b></p>
+
+<div class="play" data-title="Try it · == vs ===">
+<textarea>
+console.log(5 == "5");     // true   (loose: converts "5" to 5)
+console.log(5 === "5");    // false  (strict: number vs string)
+console.log(0 == false);   // true   ...really?
+console.log(0 === false);  // false
+console.log(null == undefined);   // true
+console.log(null === undefined);  // false
+
+console.log(10 > 3, 10 <= 3, 10 !== 3);
+</textarea>
+</div>
+
+<h3>Logical operators</h3>
+<p>Same as Java and C++: <code>&&</code> (and), <code>||</code> (or), <code>!</code> (not).</p>
+<textarea class="code" data-lang="js">
+const grade = 88;
+const hasCompleteAttendance = true;
+console.log(grade >= 75 && hasCompleteAttendance);  // true — passed and attended
+console.log(grade >= 95 || hasCompleteAttendance);  // true — at least one is true
+console.log(!hasCompleteAttendance);                // false
+</textarea>
+
+<details class="think">
+  <summary>A form sends <code>"20"</code> (a string) for quantity. Your code does <code>quantity + 1</code> and saves the result. What gets saved, and how do you fix it?</summary>
+  <div><p>It saves <code>"201"</code> — the string <code>"20"</code> joined with <code>1</code>. Fix it by converting first: <code>Number(quantity) + 1</code> gives <code>21</code>. This exact bug is common when a front end sends data to a back end, which is why both sides should check and convert their inputs.</p></div>
+</details>
+
+<h2>1.6 Strings and template literals</h2>
+<p>Joining strings with <code>+</code> gets messy fast. Modern JavaScript has <b>template literals</b>: use backticks <code>`…`</code> (the key above Tab) and put any expression inside <code>${ }</code>.</p>
+
+<div class="play" data-title="Try it · template literals">
+<textarea>
+const name = "Juan";
+const section = "BSIT 2A";
+const score = 18;
+const items = 20;
+
+// old way
+console.log("Hi " + name + " of " + section + ", you got " + score + "/" + items + ".");
+
+// template literal — easier to read
+console.log(`Hi ${name} of ${section}, you got ${score}/${items}.`);
+console.log(`That is ${(score / items) * 100}%.`);
+
+// a few useful string tools
+console.log(name.length);          // 4
+console.log(name.toUpperCase());   // "JUAN"
+console.log(section.includes("2A"));  // true
+console.log("  extra spaces  ".trim());
+</textarea>
+</div>
+
+<div class="box tip">
+  <span class="box-title">Your turn</span>
+  <p>Add a variable <code>const passing = score / items >= 0.75;</code> and print a sentence like <i>"Juan passed: true"</i> using a template literal.</p>
+</div>
+
+<h2>Summary</h2>
+<ul>
+  <li>JavaScript runs in browsers, servers, phones and the cloud — one language across every layer of an integrated system.</li>
+  <li><code>console.log()</code> prints. <code>//</code> and <code>/* */</code> are comments.</li>
+  <li>Use <code>const</code> by default and <code>let</code> when a value must change. Avoid <code>var</code>.</li>
+  <li>Values have types (number, string, boolean, undefined, null, object); variables do not. Check with <code>typeof</code>.</li>
+  <li><code>+</code> joins when a string is involved — convert with <code>Number()</code>. Compare with <code>===</code>.</li>
+  <li>Template literals: <code>`Hello ${name}`</code>.</li>
+</ul>
+
+<div class="quiz" data-id="l1" id="quiz">
+  <div class="q" data-answer="2">
+    <p>Why is JavaScript especially useful for integrative programming?</p>
+    <ul>
+      <li>It is the fastest programming language.</li>
+      <li>It is the same language as Java.</li>
+      <li>It can run on the browser, server, mobile and cloud, so one language can cover several layers of a system.</li>
+      <li>It does not need a computer to run.</li>
+    </ul>
+    <p class="why">JavaScript's reach — browser, Node.js servers, React Native, serverless — lets one team and one data format span the whole system.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>Which declaration is the best default for a value that will never change?</p>
+    <ul><li><code>var</code></li><li><code>const</code></li><li><code>let</code></li><li><code>int</code></li></ul>
+    <p class="why"><code>const</code> signals that the value will not be reassigned. <code>int</code> is not a JavaScript keyword.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>What does <code>console.log("4" + 4)</code> print?</p>
+    <ul><li><code>8</code></li><li><code>"8"</code></li><li>an error</li><li><code>44</code></li></ul>
+    <p class="why">When either side of <code>+</code> is a string, JavaScript joins them as text: <code>"44"</code>.</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>What is the result of <code>10 === "10"</code>?</p>
+    <ul><li><code>false</code></li><li><code>true</code></li><li><code>undefined</code></li><li>an error</li></ul>
+    <p class="why">Strict equality checks the type too. A number is not a string, so the result is <code>false</code>.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>Given <code>let x = 5; x = "five";</code>, what happens in JavaScript?</p>
+    <ul><li>Compile error, like Java.</li><li>The program crashes when it runs.</li><li>It works; <code>x</code> now holds a string.</li><li><code>x</code> becomes <code>undefined</code>.</li></ul>
+    <p class="why">JavaScript is dynamically typed. A <code>let</code> variable can hold a value of any type.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>Which line correctly prints <i>Score: 18</i> using a template literal (with <code>score = 18</code>)?</p>
+    <ul><li><code>console.log("Score: ${score}")</code></li><li><code>console.log(`Score: ${score}`)</code></li><li><code>console.log('Score: {score}')</code></li><li><code>console.log(`Score: $score`)</code></li></ul>
+    <p class="why">Template literals need <b>backticks</b> and the <code>${ }</code> placeholder. With ordinary quotes, <code>${score}</code> is printed literally.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

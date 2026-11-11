@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 8 · JavaScript Across Integration — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="l8">
+<div id="content">
+
+<p class="lesson-kicker">Lesson 8 · Part C · Integration</p>
+<h1>JavaScript Across Integration</h1>
+<p class="lede">Where else does JavaScript hold integrated systems together? A guided tour of the other IPT1 topics — each one built from patterns you already learned.</p>
+<div class="meta-row"><span class="chip">⏱ about 60 minutes</span><span class="chip week">Outline Weeks 3, 4–5, 6–8, 10, 13–17</span></div>
+
+<div class="box objectives">
+  <span class="box-title">By the end of this lesson you can</span>
+  <ul>
+    <li>Explain how JavaScript is used for real-time communication, databases, microservices, mobile apps, serverless functions and WebAssembly.</li>
+    <li>Read short code samples for each and point out the familiar patterns inside them.</li>
+    <li>Apply basic best practices: modules, environment variables, input validation and safe database queries.</li>
+    <li>Describe how automated tests and a CI pipeline protect an integrated system.</li>
+  </ul>
+</div>
+
+<div class="box note">
+  <span class="box-title">How to read this lesson</span>
+  <p>Each section is short. You are not expected to master these tools today — the goal is to <b>recognise</b> them. In every code sample, look for the five patterns from Lessons 1–7: <b>objects and JSON</b>, <b>callbacks</b>, <b>async/await</b>, <b>routes</b>, and <b>change data → update the view</b>.</p>
+</div>
+
+<h2>8.1 Real-time communication: WebSockets <small style="font-weight:400;color:var(--ink-faint)">· Week 7</small></h2>
+<p>HTTP is <b>request–response</b>: the client always asks first. But a chat app, a live scoreboard or a delivery tracker needs the <b>server</b> to push updates the moment they happen. A <b>WebSocket</b> opens one connection that stays open, so <i>either</i> side can send a message at any time.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Protocol</th><th>Shape</th><th>Typical use</th></tr></thead>
+  <tbody>
+    <tr><td>HTTP (REST)</td><td>client asks → server answers, then done</td><td>loading pages, CRUD APIs</td></tr>
+    <tr><td>WebSocket</td><td>one open, two-way connection</td><td>chat, live dashboards, multiplayer games</td></tr>
+    <tr><td>gRPC</td><td>fast binary calls between services, using a strict schema</td><td>microservice-to-microservice traffic</td></tr>
+  </tbody>
+</table>
+</div>
+
+<textarea class="code" data-lang="js" data-file="chat-server.js (Node — uses the 'ws' package)">
+const { WebSocketServer } = require("ws");
+const wss = new WebSocketServer({ port: 8080 });
+
+wss.on("connection", (socket) => {            // callback: someone connected
+  socket.on("message", (data) => {            // callback: they sent something
+    const msg = JSON.parse(data);             // JSON again!
+    // broadcast to everyone who is connected
+    wss.clients.forEach(client => client.send(JSON.stringify(msg)));
+  });
+});
+</textarea>
+
+<textarea class="code" data-lang="js" data-file="chat.js (browser — WebSocket is built in)">
+const socket = new WebSocket("ws://localhost:8080");
+
+socket.addEventListener("message", (event) => {      // like a click listener
+  const msg = JSON.parse(event.data);
+  const li = document.createElement("li");
+  li.textContent = `${msg.user}: ${msg.text}`;          // DOM update (Lesson 4)
+  document.querySelector("#messages").appendChild(li);
+});
+
+function send(text) {
+  socket.send(JSON.stringify({ user: "Ana", text }));
+}
+</textarea>
+
+<p><b>Patterns you know:</b> event listeners with callbacks (<code>"connection"</code>, <code>"message"</code>), JSON in both directions, and DOM updates. Many projects use the <b>Socket.IO</b> library, which adds rooms and automatic reconnection on top of this idea.</p>
+
+<h2>8.2 Databases: SQL and NoSQL <small style="font-weight:400;color:var(--ink-faint)">· Week 8</small></h2>
+<p>In Lessons 6–7, data lived in an array and vanished on restart. In a real system, routes read and write a <b>database</b>. Node.js has drivers for every major database. Notice that the route looks the same — only the line that touches the data changes, and it now uses <code>await</code>, because a database is slow, just like the network.</p>
+
+<textarea class="code" data-lang="js" data-file="SQL — MySQL with the 'mysql2' package">
+const mysql = require("mysql2/promise");
+const db = mysql.createPool({
+  host: process.env.DB_HOST, user: process.env.DB_USER,
+  password: process.env.DB_PASS, database: "school"
+});
+
+app.get("/api/students/:id", async (req, res) => {
+  const [rows] = await db.query(
+    "SELECT id, name, section FROM students WHERE id = ?",   // ? = placeholder
+    [req.params.id]
+  );
+  rows.length ? res.json(rows[0]) : res.status(404).json({ error: "Not found" });
+});
+</textarea>
+
+<textarea class="code" data-lang="js" data-file="NoSQL — MongoDB with the official 'mongodb' package">
+const { MongoClient } = require("mongodb");
+const client = new MongoClient(process.env.MONGO_URL);
+const students = client.db("school").collection("students");
+
+app.post("/api/students", async (req, res) => {
+  const result = await students.insertOne({ name: req.body.name, section: req.body.section });
+  res.status(201).json({ id: result.insertedId });
+});
+// Documents in MongoDB look just like JSON objects.
+</textarea>
+
+<div class="box warn">
+  <span class="box-title">Security: SQL injection</span>
+  <p>Never build SQL by joining strings: <code>"… WHERE id = " + req.params.id</code>. A visitor could send <code>1 OR 1=1</code> — or worse — and change your query. Always use <b>placeholders</b> (<code>?</code>) and pass values separately, as above. The driver then treats the input strictly as data.</p>
+</div>
+
+<details class="think">
+  <summary>A system keeps orders in MySQL but caches product details in MongoDB. A product's price changes in MySQL. What problem could appear, and what is it called?</summary>
+  <div><p>The two stores can disagree — customers might see the old price from MongoDB. Keeping them consistent is <b>data synchronization</b>. Common strategies: update both in the same route, send an event (e.g., through a message queue) that the other side listens for, or give cached data a short expiry time.</p></div>
+</details>
+
+<h2>8.3 Microservices: services calling services <small style="font-weight:400;color:var(--ink-faint)">· Weeks 6 &amp; 16</small></h2>
+<p>A <b>microservices</b> architecture splits one big back end into small services, each owning one job and its own data. They talk to each other over HTTP — using exactly the <code>fetch</code> you learned in Lesson 5, but now from one <i>server</i> to another. Run this: two services on two ports.</p>
+
+<div class="play" data-title="Try it · two microservices" data-sub="simulated">
+<textarea>
+const express = require("express");
+
+// ===== Service 1: Users (port 4001) =====
+const users = express();
+const userDb = { 1: { id: 1, name: "Ana Reyes" }, 2: { id: 2, name: "Ben Cruz" } };
+users.get("/users/:id", (req, res) => {
+  const u = userDb[req.params.id];
+  u ? res.json(u) : res.status(404).json({ error: "No such user" });
+});
+users.listen(4001, () => console.log("[users]  service on 4001"));
+
+// ===== Service 2: Orders (port 4002) — calls the Users service =====
+const orders = express();
+const orderDb = [
+  { id: 101, userId: 1, item: "Pili tart box", qty: 2 },
+  { id: 102, userId: 2, item: "Abaca bag",     qty: 1 }
+];
+orders.get("/orders/:id", async (req, res) => {
+  const order = orderDb.find(o => o.id === Number(req.params.id));
+  if (!order) return res.status(404).json({ error: "No such order" });
+
+  // service-to-service call
+  const r = await fetch(`http://localhost:4001/users/${order.userId}`);
+  const user = r.ok ? await r.json() : { name: "(unknown)" };
+
+  res.json({ ...order, customer: user.name });
+});
+orders.listen(4002, () => console.log("[orders] service on 4002"));
+
+// ===== A client asks the Orders service only =====
+const res = await fetch("http://localhost:4002/orders/101");
+console.log("[client]", await res.json());
+</textarea>
+</div>
+
+<details class="think">
+  <summary>What should the Orders service do if the Users service is down? Look at line 24 — what did we already do?</summary>
+  <div><p>It should <b>degrade gracefully</b> instead of crashing. Line 24 falls back to <code>"(unknown)"</code> if the Users service does not answer OK. In a large system, each service must expect others to fail sometimes — adding timeouts, retries and fallbacks is a big part of microservice design.</p></div>
+</details>
+
+<h2>8.4 Cross-platform mobile apps: React Native <small style="font-weight:400;color:var(--ink-faint)">· Weeks 4, 5 &amp; 15</small></h2>
+<p><b>React Native</b> lets you build real Android and iOS apps in JavaScript. Instead of HTML tags it uses native components like <code>&lt;View&gt;</code>, <code>&lt;Text&gt;</code> and <code>&lt;FlatList&gt;</code> — but the logic, the <code>fetch</code> calls and the API are <b>exactly the same</b> as your web front end. One back end can serve the website <i>and</i> the mobile app.</p>
+
+<textarea class="code" data-lang="js" data-file="StudentsScreen.js (React Native — read only)">
+import { useEffect, useState } from "react";
+import { View, Text, FlatList } from "react-native";
+
+export default function StudentsScreen() {
+  const [students, setStudents] = useState([]);
+
+  useEffect(() => {
+    fetch("https://your-api.example.com/api/students")   // same API as the web app
+      .then(res => res.json())
+      .then(setStudents);
+  }, []);
+
+  return (
+    <View style={{ padding: 16 }}>
+      <Text style={{ fontSize: 20 }}>Students</Text>
+      <FlatList
+        data={students}
+        keyExtractor={s => String(s.id)}
+        renderItem={({ item }) => <Text>{item.name} — {item.section}</Text>}
+      />
+    </View>
+  );
+}
+</textarea>
+<p>Compare it with the React web component in Lesson 7.5: almost line for line the same. (Flutter, the other tool in the outline, uses the Dart language instead — but it calls the same REST API with the same JSON.)</p>
+
+<h2>8.5 Serverless functions: AWS Lambda <small style="font-weight:400;color:var(--ink-faint)">· Weeks 10 &amp; 17</small></h2>
+<p>With <b>serverless</b> computing you do not run a server at all. You upload a single function; the cloud provider runs it only when a request arrives, scales it automatically, and charges per use. On AWS Lambda a Node.js function is just an exported async function that receives an <b>event</b> object and returns a response object.</p>
+
+<div class="play" data-title="Try it · a Lambda-style handler" data-sub="we call it with a fake event">
+<textarea>
+// ---- index.js as you would upload it to AWS Lambda ----
+const handler = async (event) => {
+  const name = event.queryStringParameters?.name || "stranger";
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: `Hello, ${name}! From a serverless function.` })
+  };
+};
+// On AWS you would write:  export const handler = async (event) => { ... }
+
+// ---- pretend to be AWS: build an event and invoke the function ----
+const fakeEvent = { httpMethod: "GET", queryStringParameters: { name: "Ana" } };
+const response = await handler(fakeEvent);
+console.log(response.statusCode, JSON.parse(response.body));
+
+console.log(await handler({ queryStringParameters: null }));
+</textarea>
+</div>
+<p><b>Patterns you know:</b> an async function, an object in, an object out, and <code>JSON.stringify</code> for the body. It is an Express route without the server. (<code>?.</code> is "optional chaining": if <code>queryStringParameters</code> is missing, it gives <code>undefined</code> instead of crashing.)</p>
+
+<h2>8.6 WebAssembly: JavaScript working with other languages <small style="font-weight:400;color:var(--ink-faint)">· Week 3</small></h2>
+<p><b>WebAssembly</b> (Wasm) is a compact binary format that browsers can run at near-native speed. Code written in C, C++ or Rust can be compiled to <code>.wasm</code>, then JavaScript loads it and calls its functions. JavaScript stays in charge of the page; Wasm does the heavy number-crunching (image editing, games, video, scientific code).</p>
+<p>Normally you would compile a C++ function like <code>int add(int a, int b) { return a + b; }</code> with a tool such as Emscripten. Below, the compiled bytes are written out by hand so you can run it right here.</p>
+
+<div class="play" data-title="Try it · calling WebAssembly from JS">
+<textarea>
+// The bytes of a tiny compiled WebAssembly module that exports add(a, b).
+// (Normally these come from a file: await fetch("add.wasm"))
+const bytes = new Uint8Array([
+  0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,          // "\0asm", version 1
+  0x01,0x07,0x01,0x60,0x02,0x7f,0x7f,0x01,0x7f,      // type: (i32, i32) -> i32
+  0x03,0x02,0x01,0x00,                               // one function
+  0x07,0x07,0x01,0x03,0x61,0x64,0x64,0x00,0x00,      // export it as "add"
+  0x0a,0x09,0x01,0x07,0x00,0x20,0x00,0x20,0x01,0x6a,0x0b  // body: a + b
+]);
+
+const { instance } = await WebAssembly.instantiate(bytes);
+const add = instance.exports.add;      // a Wasm function, callable from JS
+
+console.log("add(2, 3) =", add(2, 3));
+console.log("add(40, 2) =", add(40, 2));
+console.log(typeof add);               // to JavaScript, it is just a function
+</textarea>
+</div>
+<p><b>The integration idea:</b> two languages, one program. JavaScript loads the module (asynchronously, with <code>await</code>) and calls its exports like normal functions. This is the browser counterpart of the Python + C++ (Cython) technique from Week 3.</p>
+
+<h2>8.7 Best practices &amp; security <small style="font-weight:400;color:var(--ink-faint)">· Week 14</small></h2>
+
+<h3>Modularize: one job per file</h3>
+<textarea class="code" data-lang="text">
+student-api/
+├── server.js              ← creates the app, adds middleware, mounts routes
+├── routes/students.js     ← only the /api/students routes
+├── services/db.js         ← only database connection and queries
+├── .env                   ← secrets (NEVER commit this)
+└── .gitignore             ← lists node_modules/ and .env
+</textarea>
+<textarea class="code" data-lang="js" data-file="routes/students.js">
+const express = require("express");
+const router = express.Router();
+router.get("/", async (req, res) => { /* ... */ });
+router.post("/", async (req, res) => { /* ... */ });
+module.exports = router;
+
+// in server.js:
+// app.use("/api/v1/students", require("./routes/students"));
+</textarea>
+
+<h3>Keep secrets out of code</h3>
+<textarea class="code" data-lang="bash" data-file=".env (stays on your computer / server only)">
+PORT=3000
+DB_PASS=correct-horse-battery
+API_KEY=change-me
+</textarea>
+<textarea class="code" data-lang="js">
+require("dotenv").config();               // loads .env into process.env
+const port = process.env.PORT || 3000;
+</textarea>
+
+<h3>A checklist for every integrated system</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Practice</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><b>Validate input on the server</b></td><td>The client can be bypassed (Lesson 7).</td></tr>
+    <tr><td><b>Use placeholders in SQL</b></td><td>Prevents SQL injection (8.2).</td></tr>
+    <tr><td><b>Use <code>textContent</code> for user text</b></td><td>Prevents XSS (Lesson 4).</td></tr>
+    <tr><td><b>Secrets in <code>.env</code>, listed in <code>.gitignore</code></b></td><td>Public GitHub repos are scanned by bots for leaked passwords within minutes.</td></tr>
+    <tr><td><b>Restrict CORS to your own front end</b></td><td>Stops other sites from using your API from their pages.</td></tr>
+    <tr><td><b>Version your API</b> (<code>/api/v1/…</code>)</td><td>You can release <code>/api/v2</code> without breaking the mobile app still using v1.</td></tr>
+    <tr><td><b>Use HTTPS in production</b></td><td>Encrypts passwords and data in transit.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>8.8 Automated tests and CI/CD <small style="font-weight:400;color:var(--ink-faint)">· Week 13</small></h2>
+<p>When many parts are integrated, a small change in one can break another. <b>Automated tests</b> check that each part still works. <b>Continuous Integration (CI)</b> runs those tests automatically on every push to GitHub, and <b>Continuous Deployment (CD)</b> publishes the new version only if they pass.</p>
+
+<p>Real projects use a testing library such as <b>Jest</b>. The box below builds a tiny version of <code>test()</code> and <code>expect()</code> so you can see what a test runner does.</p>
+
+<div class="play" data-title="Try it · how tests work">
+<textarea>
+// ---- the code we want to protect ----
+function computeRemark(grade) {
+  if (typeof grade !== "number") throw new Error("grade must be a number");
+  return grade >= 75 ? "PASSED" : "FAILED";
+}
+
+// ---- a mini test runner (Jest gives you these for free) ----
+let passed = 0, failed = 0;
+function test(name, fn) {
+  try { fn(); passed++; console.log("✓", name); }
+  catch (e) { failed++; console.error("✗", name, "—", e.message); }
+}
+function expect(actual) {
+  return {
+    toBe(expected) {
+      if (actual !== expected) throw new Error(`expected ${expected}, got ${actual}`);
+    }
+  };
+}
+
+// ---- the tests ----
+test("75 is passing", () => expect(computeRemark(75)).toBe("PASSED"));
+test("74 is failing", () => expect(computeRemark(74)).toBe("FAILED"));
+test("rejects text", () => {
+  let threw = false;
+  try { computeRemark("80"); } catch { threw = true; }
+  expect(threw).toBe(true);
+});
+
+console.log(`\n${passed} passed, ${failed} failed`);
+// Try it: change 75 to 70 inside computeRemark and run again.
+</textarea>
+</div>
+
+<p>And here is a complete CI pipeline for GitHub. Save it as <code>.github/workflows/test.yml</code> in a repository, and GitHub runs your tests on every push and shows a ✓ or ✗ next to the commit.</p>
+<textarea class="code" data-lang="yaml" data-file=".github/workflows/test.yml (GitHub Actions)">
+name: Run tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4          # get the code
+      - uses: actions/setup-node@v4        # install Node.js
+        with:
+          node-version: 22
+      - run: npm ci                        # install exact dependencies
+      - run: npm test                      # run Jest; a failure stops the pipeline
+</textarea>
+<p>The outline names Jenkins and GitLab CI — the idea is identical: <b>on every change, build → test → deploy</b>, automatically. Tools such as <b>Docker</b> package the Node app with everything it needs so it runs the same way on every machine.</p>
+
+<h2>8.9 The whole map</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>IPT1 topic</th><th>JavaScript tool</th><th>Pattern you already know</th></tr></thead>
+  <tbody>
+    <tr><td>Interoperability (Wk 3)</td><td>WebAssembly API</td><td><code>await</code> + calling a function</td></tr>
+    <tr><td>Cross-platform mobile (Wk 4–5, 15)</td><td>React Native</td><td><code>fetch</code> + state → view</td></tr>
+    <tr><td>Microservices &amp; APIs (Wk 6, 16)</td><td>Express + <code>fetch</code> between services</td><td>routes, JSON, async</td></tr>
+    <tr><td>Middleware &amp; protocols (Wk 7)</td><td>Express middleware, WebSockets</td><td><code>next()</code>, event callbacks</td></tr>
+    <tr><td>Database integration (Wk 8)</td><td>mysql2, mongodb drivers</td><td><code>await</code> a query, objects/JSON</td></tr>
+    <tr><td>Front end ↔ back end (Wk 11)</td><td>DOM / React + Express</td><td>the full loop from Lesson 7</td></tr>
+    <tr><td>Backend frameworks (Wk 12)</td><td>Node.js + Express</td><td>Lesson 6</td></tr>
+    <tr><td>CI/CD (Wk 13)</td><td>Jest + GitHub Actions</td><td>functions + <code>throw</code>/<code>catch</code></td></tr>
+    <tr><td>Best practices (Wk 14)</td><td>modules, dotenv, validation</td><td><code>require</code>/<code>module.exports</code></td></tr>
+    <tr><td>Serverless (Wk 10, 17)</td><td>AWS Lambda (Node.js)</td><td>async function: event in, response out</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Summary</h2>
+<ul>
+  <li>WebSockets keep a two-way connection open for real-time features.</li>
+  <li>Routes read and write databases with <code>await</code>; always use query placeholders.</li>
+  <li>Microservices call each other with <code>fetch</code> and must handle each other's failures.</li>
+  <li>React Native reuses your JavaScript skills and the same API for mobile apps.</li>
+  <li>A Lambda function is an async function that turns an event object into a response object.</li>
+  <li>WebAssembly lets JavaScript call fast code compiled from other languages.</li>
+  <li>Modularize, keep secrets in environment variables, validate everything, and let CI run your tests.</li>
+</ul>
+
+<div class="quiz" data-id="l8" id="quiz">
+  <div class="q" data-answer="2">
+    <p>A live basketball scoreboard must update on every viewer's screen the instant a basket is scored. Which technology fits best?</p>
+    <ul><li>A REST GET request every 10 minutes</li><li>A PDF report</li><li>WebSockets</li><li>A static HTML page</li></ul>
+    <p class="why">WebSockets keep a connection open so the server can push updates immediately.</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>Which database query is safe from SQL injection?</p>
+    <ul><li><code>db.query("SELECT * FROM students WHERE id = ?", [id])</code></li><li><code>db.query("SELECT * FROM students WHERE id = " + id)</code></li><li><code>db.query(`SELECT * FROM students WHERE id = ${id}`)</code></li><li>All are equally safe.</li></ul>
+    <p class="why">Placeholders send the value separately so it is treated as data, never as SQL. Template literals and <code>+</code> both build the query from raw input.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>In a microservices system, how does the Orders service get a customer's name from the Users service?</p>
+    <ul><li>By reading the Users service's variables directly.</li><li>By sharing one global array.</li><li>By copying the Users code into Orders.</li><li>By sending an HTTP request (e.g., with <code>fetch</code>) to the Users service's API.</li></ul>
+    <p class="why">Each microservice owns its data and exposes it only through its API.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>What does an AWS Lambda function written in Node.js look like?</p>
+    <ul><li>A full Express server with <code>app.listen()</code>.</li><li>An exported async function that receives an event object and returns a response object.</li><li>A Java class with a main method.</li><li>An HTML page.</li></ul>
+    <p class="why">Serverless platforms call your handler with an event; you return <code>{ statusCode, body }</code>.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>Where should a database password for your Node.js API be kept?</p>
+    <ul><li>In <code>server.js</code>, so it is easy to find.</li><li>In the front-end JavaScript.</li><li>In an environment variable (e.g., a <code>.env</code> file listed in <code>.gitignore</code>).</li><li>In the README on GitHub.</li></ul>
+    <p class="why">Secrets must never be committed to a repository or sent to the browser.</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>What does a CI pipeline like the GitHub Actions example do?</p>
+    <ul><li>Automatically installs dependencies and runs the tests on every push, reporting pass or fail.</li><li>Writes the tests for you.</li><li>Replaces the need for a server.</li><li>Converts JavaScript into Java.</li></ul>
+    <p class="why">Continuous Integration automates build-and-test so broken changes are caught immediately.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

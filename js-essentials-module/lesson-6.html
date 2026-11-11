@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 6 · JavaScript on the Server — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="l6">
+<div id="content">
+
+<p class="lesson-kicker">Lesson 6 · Part C · Integration</p>
+<h1>JavaScript on the Server: Node.js &amp; Express</h1>
+<p class="lede">So far, JavaScript has lived inside one person's browser. How do we use the same language to build the server that <i>everyone's</i> browser talks to?</p>
+<div class="meta-row"><span class="chip">⏱ about 60 minutes</span><span class="chip week">Outline Weeks 6, 12 &amp; 16 · Microservices, REST APIs, Node.js</span></div>
+
+<div class="box objectives">
+  <span class="box-title">By the end of this lesson you can</span>
+  <ul>
+    <li>Explain what Node.js is and how it differs from JavaScript in the browser.</li>
+    <li>Describe what npm and <code>package.json</code> are for.</li>
+    <li>Read and write a basic Express server with routes.</li>
+    <li>Design REST endpoints using the right HTTP methods and status codes.</li>
+    <li>Use route parameters, query strings and JSON request bodies.</li>
+    <li>Explain what middleware is, and write a simple one.</li>
+  </ul>
+</div>
+
+<div class="box note">
+  <span class="box-title">How the "Try it" boxes work in this lesson</span>
+  <p>Real Node.js runs on a computer, not inside a web page. So that you can practise on a phone, this module includes a small <b>simulator</b> that behaves like Express inside your browser. The code you write is the <b>same code</b> you would put in <code>server.js</code> on a real computer. The only extra part is the <code>fetch()</code> at the bottom of each box, which plays the role of a browser or testing tool visiting your server.</p>
+</div>
+
+<h2>6.1 What is Node.js?</h2>
+<p><b>Node.js</b> is a program that runs JavaScript <i>outside</i> the browser. It takes the JavaScript engine from Google Chrome (called V8) and adds the things a server needs: access to files, the network, and the operating system. It was released in 2009, and it is why JavaScript is now a back-end language too.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th></th><th>JavaScript in the browser</th><th>JavaScript in Node.js</th></tr></thead>
+  <tbody>
+    <tr><td><b>Runs on</b></td><td>each user's device</td><td>the server (your computer, a cloud machine)</td></tr>
+    <tr><td><b>Has</b></td><td><code>document</code>, <code>window</code>, the DOM, buttons</td><td>files (<code>fs</code>), network servers, databases, <code>process.env</code></td></tr>
+    <tr><td><b>Does not have</b></td><td>direct file or database access (for safety)</td><td>a page, the DOM, <code>document</code></td></tr>
+    <tr><td><b>Job</b></td><td>show things and react to the user</td><td>store data, enforce rules, answer requests</td></tr>
+  </tbody>
+</table>
+</div>
+
+<details class="think">
+  <summary>Why can't the browser just connect to the database directly? It would be simpler.</summary>
+  <div><p>Because anything in the browser can be read and changed by the user. If the browser held the database password, anyone could open the developer tools, copy it, and delete or steal every record. The server is the <b>trusted middleman</b>: it keeps the secrets, checks every request, and only does what the rules allow.</p></div>
+</details>
+
+<h2>6.2 npm and <code>package.json</code></h2>
+<p><b>npm</b> (Node Package Manager) installs libraries other people wrote, called <b>packages</b>. It is like Maven/Gradle for Java. Every Node project has a <code>package.json</code> file that lists its name, its scripts and the packages it depends on.</p>
+
+<p>On a real computer with Node.js installed, you would start a project like this:</p>
+<textarea class="code" data-lang="bash">
+mkdir student-api          # make a folder
+cd student-api
+npm init -y                # create package.json
+npm install express cors   # download Express and cors into node_modules/
+node server.js             # run your server
+</textarea>
+
+<textarea class="code" data-lang="js" data-file="package.json (created by npm)">
+{
+  "name": "student-api",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0"
+  }
+}
+</textarea>
+
+<h3>Modules: splitting code into files</h3>
+<p>Node lets one file use code from another. You will see two styles — both do the same job:</p>
+<textarea class="code" data-lang="js">
+// CommonJS (classic Node style — used in this module)
+const express = require("express");
+module.exports = { addStudent };
+
+// ES Modules (modern style — used by React and newer projects)
+import express from "express";
+export function addStudent() { /* ... */ }
+</textarea>
+
+<h2>6.3 Your first Express server</h2>
+<p><b>Express</b> is the most popular framework for building web servers in Node.js. Here is a complete server. Read the line notes, then press Run.</p>
+
+<div class="play" data-title="Try it · hello server">
+<textarea>
+const express = require("express");
+const app = express();
+
+app.get("/", (req, res) => {
+  res.send("Hello from my first Express server!");
+});
+
+app.get("/api/time", (req, res) => {
+  res.json({ now: new Date().toISOString(), school: "PSU" });
+});
+
+app.listen(3000, () => {
+  console.log("[server] Listening on http://localhost:3000");
+});
+
+// ---- pretend we are a browser visiting the server ----
+const r1 = await fetch("http://localhost:3000/");
+console.log("[client] GET /", r1.status, "→", await r1.text());
+
+const r2 = await fetch("http://localhost:3000/api/time");
+console.log("[client] GET /api/time", r2.status, "→", await r2.json());
+
+const r3 = await fetch("http://localhost:3000/nope");
+console.log("[client] GET /nope", r3.status, "→", await r3.text());
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 1</b> Load the Express package.</li>
+  <li><b>line 2</b> Create the application object — your server.</li>
+  <li><b>line 4</b> A <b>route</b>: "when a GET request arrives for <code>/</code>, run this function." <code>req</code> is the incoming request; <code>res</code> is the response you will send back.</li>
+  <li><b>line 5</b> <code>res.send()</code> sends text (or HTML) back and finishes the request.</li>
+  <li><b>line 9</b> <code>res.json()</code> converts an object to JSON and sends it with the correct <code>Content-Type</code>. This is how APIs answer.</li>
+  <li><b>line 12</b> Start listening for requests on port 3000. On a real computer you would now open <code>http://localhost:3000</code> in a browser.</li>
+  <li><b>line 23</b> No route matches <code>/nope</code>, so Express automatically answers <code>404</code>.</li>
+</ul>
+
+<div class="box analogy">
+  <span class="box-title">Everyday analogy</span>
+  <p>A server is like the <b>registrar's office</b>. Each window is a route: "Window 1 — enrollment" (<code>POST /api/enroll</code>), "Window 2 — request TOR" (<code>GET /api/records/:id</code>). A student (the client) goes to a window with a request form; the clerk (your route function) checks it and hands back a response. If you go to a window that does not exist, you are told "not here" (404).</p>
+</div>
+
+<h2>6.4 REST: a shared way to design APIs</h2>
+<p><b>REST</b> is a set of conventions that make APIs predictable. Think in <b>resources</b> (nouns, like <i>students</i>) and use the <b>HTTP method</b> as the verb:</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Method + path</th><th>Action</th><th>Success code</th><th>Database word (CRUD)</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/students</code></td><td>list all students</td><td>200</td><td>Read</td></tr>
+    <tr><td><code>GET /api/students/7</code></td><td>get student 7</td><td>200 (or 404)</td><td>Read</td></tr>
+    <tr><td><code>POST /api/students</code></td><td>create a new student (data in the body)</td><td>201</td><td>Create</td></tr>
+    <tr><td><code>PUT /api/students/7</code></td><td>update student 7</td><td>200</td><td>Update</td></tr>
+    <tr><td><code>DELETE /api/students/7</code></td><td>remove student 7</td><td>204</td><td>Delete</td></tr>
+  </tbody>
+</table>
+</div>
+
+<details class="think">
+  <summary>Which is the better REST design: <code>GET /api/deleteStudent?id=7</code> or <code>DELETE /api/students/7</code>? Why?</summary>
+  <div><p><code>DELETE /api/students/7</code>. The URL names the <b>resource</b>, and the method states the <b>action</b>. Using GET for a delete is also dangerous: browsers, search engines and link previews freely repeat GET requests, assuming they are safe — and could delete data by accident.</p></div>
+</details>
+
+<h2>6.5 Route parameters and query strings</h2>
+<p>Two ways a client sends small pieces of information in the URL:</p>
+<ul>
+  <li><b>Route parameter</b> — part of the path, for <i>which</i> resource: <code>/api/students/<b>7</b></code> → <code>req.params.id</code></li>
+  <li><b>Query string</b> — after <code>?</code>, for filtering or options: <code>/api/students?<b>section=2A</b></code> → <code>req.query.section</code></li>
+</ul>
+
+<div class="play" data-title="Try it · params and query">
+<textarea>
+const express = require("express");
+const app = express();
+
+const students = [
+  { id: 1, name: "Ana",   section: "2A" },
+  { id: 2, name: "Ben",   section: "2B" },
+  { id: 3, name: "Carla", section: "2A" }
+];
+
+// GET /api/students  or  /api/students?section=2A
+app.get("/api/students", (req, res) => {
+  const { section } = req.query;
+  const result = section ? students.filter(s => s.section === section) : students;
+  res.json(result);
+});
+
+// GET /api/students/:id
+app.get("/api/students/:id", (req, res) => {
+  const id = Number(req.params.id);          // params are strings! convert.
+  const student = students.find(s => s.id === id);
+  if (!student) {
+    return res.status(404).json({ error: `Student ${id} not found` });
+  }
+  res.json(student);
+});
+
+app.listen(3000);
+
+// ---- client side ----
+const show = async (url) => {
+  const r = await fetch(url);
+  console.log(`GET ${url.replace("http://localhost:3000", "")} → ${r.status}`, await r.json());
+};
+await show("http://localhost:3000/api/students");
+await show("http://localhost:3000/api/students?section=2A");
+await show("http://localhost:3000/api/students/2");
+await show("http://localhost:3000/api/students/99");
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 18</b> <code>:id</code> in the path is a placeholder. Whatever is in that spot of the URL appears in <code>req.params.id</code>.</li>
+  <li><b>line 19</b> Everything in a URL arrives as a <b>string</b>. <code>"2" === 2</code> is false (Lesson 1!), so convert with <code>Number()</code>.</li>
+  <li><b>line 22</b> Send the right status code. <code>return</code> stops the function so we do not try to send a second response.</li>
+</ul>
+
+<h2>6.6 Receiving data: POST and <code>express.json()</code></h2>
+<p>When a client POSTs JSON (like you did in Lesson 5), the data arrives in the request <b>body</b>. Express does not read bodies by default — you must add <code>app.use(express.json())</code>. Then the parsed object is in <code>req.body</code>.</p>
+
+<p>The server must also <b>validate</b> the data. Never trust what a client sends: it may be missing fields, have the wrong type, or be deliberately harmful.</p>
+
+<div class="play" data-title="Try it · POST with validation">
+<textarea>
+const express = require("express");
+const app = express();
+app.use(express.json());     // ← turn JSON bodies into req.body
+
+const students = [];
+let nextId = 1;
+
+app.post("/api/students", (req, res) => {
+  const { name, section } = req.body;
+
+  if (!name || !section) {
+    return res.status(400).json({ error: "name and section are required" });
+  }
+
+  const student = { id: nextId++, name: name.trim(), section };
+  students.push(student);
+  console.log("[server] saved", student);
+  res.status(201).json(student);           // 201 Created
+});
+
+app.listen(3000);
+
+// ---- client side ----
+async function addStudent(data) {
+  const r = await fetch("http://localhost:3000/api/students", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  console.log("[client]", r.status, await r.json());
+}
+await addStudent({ name: "Ana", section: "2A" });
+await addStudent({ name: "Ben" });            // missing section
+</textarea>
+</div>
+
+<div class="box tip">
+  <span class="box-title">Your turn</span>
+  <p>Comment out line 3 (<code>app.use(express.json())</code>) and run again. What error do you get, and why? Then restore it, and add a rule: <code>section</code> must be either <code>"2A"</code> or <code>"2B"</code>, otherwise answer 400.</p>
+</div>
+
+<h2>6.7 A complete CRUD API</h2>
+<p>Here is everything together — list, read, create, update and delete — in about 50 lines. The data lives in an array, so it disappears when the server restarts. In Lesson 8 you will see how to store it in a real database instead.</p>
+
+<div class="play" data-title="Try it · full CRUD API">
+<textarea>
+const express = require("express");
+const app = express();
+app.use(express.json());
+
+let tasks = [
+  { id: 1, title: "Read Lesson 6", done: true },
+  { id: 2, title: "Answer Check Yourself", done: false }
+];
+let nextId = 3;
+
+const findTask = (id) => tasks.find(t => t.id === Number(id));
+
+app.get("/api/tasks", (req, res) => res.json(tasks));
+
+app.get("/api/tasks/:id", (req, res) => {
+  const task = findTask(req.params.id);
+  task ? res.json(task) : res.status(404).json({ error: "Not found" });
+});
+
+app.post("/api/tasks", (req, res) => {
+  if (!req.body.title) return res.status(400).json({ error: "title is required" });
+  const task = { id: nextId++, title: req.body.title, done: false };
+  tasks.push(task);
+  res.status(201).json(task);
+});
+
+app.put("/api/tasks/:id", (req, res) => {
+  const task = findTask(req.params.id);
+  if (!task) return res.status(404).json({ error: "Not found" });
+  if (req.body.title !== undefined) task.title = req.body.title;
+  if (req.body.done !== undefined) task.done = Boolean(req.body.done);
+  res.json(task);
+});
+
+app.delete("/api/tasks/:id", (req, res) => {
+  const before = tasks.length;
+  tasks = tasks.filter(t => t.id !== Number(req.params.id));
+  if (tasks.length === before) return res.status(404).json({ error: "Not found" });
+  res.sendStatus(204);
+});
+
+app.listen(3000, () => console.log("[server] Task API ready on port 3000"));
+
+// ---- client: exercise every endpoint ----
+const api = "http://localhost:3000/api/tasks";
+const json = { "Content-Type": "application/json" };
+
+let r = await fetch(api, { method: "POST", headers: json, body: JSON.stringify({ title: "Build my API" }) });
+console.log("POST   →", r.status, await r.json());
+
+r = await fetch(api + "/2", { method: "PUT", headers: json, body: JSON.stringify({ done: true }) });
+console.log("PUT    →", r.status, await r.json());
+
+r = await fetch(api + "/1", { method: "DELETE" });
+console.log("DELETE →", r.status);
+
+r = await fetch(api);
+console.log("GET    →", r.status);
+console.table(await r.json());
+</textarea>
+</div>
+
+<h2>6.8 Middleware: code that runs between request and route</h2>
+<p><b>Middleware</b> is a function that sees every request <i>before</i> it reaches a route. It can log, check a login token, parse the body, or reject the request. It receives a third argument, <code>next</code>; calling <code>next()</code> passes the request along the line. <code>express.json()</code> is middleware, and so is <code>cors()</code>, which you will meet in Lesson 7. (This is the "middleware" in Outline Week 7.)</p>
+
+<div class="play" data-title="Try it · logging and a simple API key check">
+<textarea>
+const express = require("express");
+const app = express();
+
+// 1. Logger — runs for every request
+app.use((req, res, next) => {
+  console.log(`[log] ${req.method} ${req.path}`);
+  next();                       // continue to the next step
+});
+
+// 2. Guard — only for /api/admin paths
+app.use("/api/admin", (req, res, next) => {
+  if (req.headers["x-api-key"] !== "secret123") {
+    return res.status(401).json({ error: "Missing or wrong API key" });
+  }
+  next();
+});
+
+app.get("/api/public", (req, res) => res.json({ message: "Anyone can see this" }));
+app.get("/api/admin/stats", (req, res) => res.json({ users: 42 }));
+
+app.listen(3000);
+
+const base = "http://localhost:3000";
+let r = await fetch(base + "/api/public");
+console.log(r.status, await r.json());
+
+r = await fetch(base + "/api/admin/stats");
+console.log(r.status, await r.json());
+
+r = await fetch(base + "/api/admin/stats", { headers: { "X-API-Key": "secret123" } });
+console.log(r.status, await r.json());
+</textarea>
+</div>
+
+<div class="flow">
+  <div class="node"><b>Request</b></div><div class="arrow">→</div>
+  <div class="node"><b>logger</b>next()</div><div class="arrow">→</div>
+  <div class="node"><b>express.json()</b>next()</div><div class="arrow">→</div>
+  <div class="node"><b>auth check</b>next() or 401</div><div class="arrow">→</div>
+  <div class="node"><b>route</b>res.json()</div>
+</div>
+
+<div class="box warn">
+  <span class="box-title">Real projects</span>
+  <p>Never write a real secret like <code>"secret123"</code> in your code. Store it in an environment variable (<code>process.env.API_KEY</code>) and keep it out of GitHub. Lesson 8 shows how.</p>
+</div>
+
+<h2>6.9 Testing an API on a real computer</h2>
+<p>On a real computer, you do not need a front end to test your API. Developers use:</p>
+<ul>
+  <li><b>The browser</b> — just type a GET URL like <code>http://localhost:3000/api/tasks</code>.</li>
+  <li><b>Thunder Client</b> (a VS Code extension) or <b>Postman</b> — send any method, headers and JSON body with a form.</li>
+  <li><b>curl</b> in the terminal:</li>
+</ul>
+<textarea class="code" data-lang="bash">
+curl http://localhost:3000/api/tasks
+curl -X POST http://localhost:3000/api/tasks \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Test from curl"}'
+</textarea>
+
+<h2>Summary</h2>
+<ul>
+  <li><b>Node.js</b> runs JavaScript on the server, with access to files, networks and databases.</li>
+  <li><b>npm</b> installs packages; <code>package.json</code> lists them.</li>
+  <li><b>Express</b>: <code>app.get/post/put/delete(path, (req, res) =&gt; …)</code>, then <code>app.listen(port)</code>.</li>
+  <li>REST: nouns in the URL, verbs as methods, honest status codes (200, 201, 204, 400, 404).</li>
+  <li><code>req.params</code> (path), <code>req.query</code> (after ?), <code>req.body</code> (needs <code>express.json()</code>).</li>
+  <li>Always validate input on the server. Middleware runs before routes and calls <code>next()</code>.</li>
+</ul>
+
+<div class="quiz" data-id="l6" id="quiz">
+  <div class="q" data-answer="1">
+    <p>What is Node.js?</p>
+    <ul><li>A new programming language based on Java.</li><li>A runtime that lets JavaScript run outside the browser, for example on a server.</li><li>A database for JavaScript.</li><li>A front-end library like React.</li></ul>
+    <p class="why">Node.js uses Chrome's V8 engine plus server features (files, network) to run JavaScript anywhere.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>Which REST endpoint best fits "create a new student"?</p>
+    <ul><li><code>GET /api/createStudent</code></li><li><code>PUT /api/students/new</code></li><li><code>POST /api/students</code></li><li><code>DELETE /api/students</code></li></ul>
+    <p class="why">POST to the collection creates a new item. The URL names the resource; the method is the action.</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>For the route <code>app.get("/api/students/:id", …)</code> and the request <code>/api/students/15</code>, what is <code>req.params.id</code>?</p>
+    <ul><li><code>"15"</code> (a string)</li><li><code>15</code> (a number)</li><li><code>":id"</code></li><li><code>undefined</code></li></ul>
+    <p class="why">Route parameters always arrive as strings. Convert with <code>Number()</code> before comparing to numeric ids.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>A POST route always finds <code>req.body</code> is <code>undefined</code>. What is the most likely cause?</p>
+    <ul><li>The route should be GET.</li><li>The port is wrong.</li><li><code>res.json()</code> was not called.</li><li><code>app.use(express.json())</code> was not added.</li></ul>
+    <p class="why">Express only parses JSON bodies when the <code>express.json()</code> middleware is in place.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>A client sends a new task with no title. Which response is most appropriate?</p>
+    <ul><li><code>200 OK</code></li><li><code>400 Bad Request</code> with an error message</li><li><code>500 Internal Server Error</code></li><li><code>201 Created</code></li></ul>
+    <p class="why">The client sent invalid data, so it is a client error: 400. A 500 means the server itself failed.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>In Express middleware, what does calling <code>next()</code> do?</p>
+    <ul><li>Ends the request with status 200.</li><li>Restarts the server.</li><li>Passes the request on to the next middleware or route.</li><li>Sends the request to the next server.</li></ul>
+    <p class="why">Middleware either responds (and stops the chain) or calls <code>next()</code> to let the request continue.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

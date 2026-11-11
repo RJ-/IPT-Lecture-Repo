@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="glo">
+<div id="content">
+
+<p class="lesson-kicker">Reference</p>
+<h1>Glossary</h1>
+<p class="lede">Key terms from the module, in alphabetical order. The number in brackets is the lesson where the term is explained.</p>
+
+<dl class="glossary">
+  <dt>API (Application Programming Interface) [5]</dt><dd>A defined way for one program to ask another for data or actions. A web API answers HTTP requests, usually with JSON.</dd>
+  <dt>Array [3]</dt><dd>An ordered list of values, e.g. <code>[85, 92, 78]</code>. Indexes start at 0.</dd>
+  <dt>Arrow function [2]</dt><dd>A short way to write a function: <code>(a, b) =&gt; a + b</code>.</dd>
+  <dt>async / await [5]</dt><dd>Keywords that let asynchronous code read top to bottom. <code>await</code> pauses an <code>async</code> function until a Promise settles.</dd>
+  <dt>Asynchronous [5]</dt><dd>Work that is started now and finished later (network, timers, databases) without blocking other code.</dd>
+  <dt>Callback [2]</dt><dd>A function passed to another function, to be called later — on each item, on an event, or when data arrives.</dd>
+  <dt>CI/CD [8]</dt><dd>Continuous Integration / Continuous Deployment: automatically testing (and then publishing) code on every change.</dd>
+  <dt>const / let [1]</dt><dd>Ways to declare variables. <code>const</code> cannot be reassigned; <code>let</code> can. Avoid the older <code>var</code>.</dd>
+  <dt>CORS (Cross-Origin Resource Sharing) [7]</dt><dd>The browser rule that a page may only read responses from another origin if that server sends <code>Access-Control-Allow-Origin</code>. Fixed on the server.</dd>
+  <dt>CRUD [6]</dt><dd>Create, Read, Update, Delete — the four basic data operations, matching POST, GET, PUT/PATCH and DELETE.</dd>
+  <dt>DOM (Document Object Model) [4]</dt><dd>The tree of objects the browser builds from HTML, which JavaScript can read and change.</dd>
+  <dt>Endpoint [6]</dt><dd>A specific method + path an API responds to, e.g. <code>GET /api/students</code>.</dd>
+  <dt>Environment variable [8]</dt><dd>A setting supplied from outside the code (<code>process.env.DB_PASS</code>), used to keep secrets out of source files.</dd>
+  <dt>Event / event listener [4]</dt><dd>Something that happens (click, submit, message) and the callback registered with <code>addEventListener</code> to handle it.</dd>
+  <dt>Express [6]</dt><dd>The most popular Node.js framework for building web servers and REST APIs.</dd>
+  <dt>fetch() [5]</dt><dd>The built-in function for sending HTTP requests from JavaScript. Returns a Promise of a response.</dd>
+  <dt>GraphQL [7]</dt><dd>An API style with one endpoint, where the client's query states exactly which fields it wants.</dd>
+  <dt>HTTP status code [5]</dt><dd>A number in every response: 2xx success (200, 201, 204), 4xx client error (400, 404), 5xx server error (500).</dd>
+  <dt>JSON [3]</dt><dd>JavaScript Object Notation — a plain-text data format every language can read. <code>JSON.stringify</code> to send, <code>JSON.parse</code> to receive.</dd>
+  <dt>map / filter / reduce [3]</dt><dd>Array methods that transform, keep, or combine items using a callback.</dd>
+  <dt>Microservices [8]</dt><dd>An architecture of small, independent services that each own one job and communicate through APIs.</dd>
+  <dt>Middleware [6]</dt><dd>A function in Express that runs before routes, receives <code>(req, res, next)</code>, and either responds or calls <code>next()</code>.</dd>
+  <dt>Node.js [6]</dt><dd>A runtime that executes JavaScript outside the browser, used for servers, tools and scripts.</dd>
+  <dt>npm / package.json [6]</dt><dd>Node's package manager, and the file that lists a project's dependencies and scripts.</dd>
+  <dt>Object [3]</dt><dd>A collection of named properties, e.g. <code>{ name: "Ana", grade: 91 }</code>.</dd>
+  <dt>Origin [7]</dt><dd>Protocol + host + port, e.g. <code>http://localhost:3000</code>.</dd>
+  <dt>Promise [5]</dt><dd>An object representing a future value; it is pending, then fulfilled or rejected.</dd>
+  <dt>React / React Native [7, 8]</dt><dd>A library for building user interfaces from components and state; React Native uses the same approach for Android and iOS apps.</dd>
+  <dt>req.params / req.query / req.body [6]</dt><dd>Data from the URL path, from the query string after <code>?</code>, and from the request body (needs <code>express.json()</code>).</dd>
+  <dt>REST [6]</dt><dd>A style of API design: resources as nouns in URLs, HTTP methods as verbs, JSON as the format.</dd>
+  <dt>Same-origin policy [7]</dt><dd>The browser security rule that limits how a page can read data from other origins.</dd>
+  <dt>Serverless [8]</dt><dd>Running individual functions in the cloud on demand (e.g., AWS Lambda), without managing a server.</dd>
+  <dt>SQL injection [8]</dt><dd>An attack where input changes a database query. Prevented with placeholders (<code>?</code>).</dd>
+  <dt>Template literal [1]</dt><dd>A backtick string with embedded expressions: <code>`Hi ${name}`</code>.</dd>
+  <dt>Truthy / falsy [2]</dt><dd>How values behave in conditions. Falsy: <code>false, 0, "", null, undefined, NaN</code>; everything else is truthy.</dd>
+  <dt>WebAssembly (Wasm) [8]</dt><dd>A binary format for fast code compiled from languages like C++ or Rust, loaded and called from JavaScript.</dd>
+  <dt>WebSocket [8]</dt><dd>A protocol that keeps a two-way connection open so the server can push data in real time.</dd>
+  <dt>XSS (Cross-Site Scripting) [4]</dt><dd>An attack where user-supplied text is run as code on a page. Prevented by displaying user text with <code>textContent</code>.</dd>
+</dl>
+
+</div>
+</body>
+</html>

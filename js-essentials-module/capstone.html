@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Output & Progress Report — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="cap">
+<div id="content">
+
+<p class="lesson-kicker">Finish</p>
+<h1>Portfolio Output &amp; Progress Report</h1>
+<p class="lede">Show that you can make two parts of a system work together — and explain how.</p>
+<div class="meta-row"><span class="chip">👥 pairs or triads</span><span class="chip">20 points · Laboratory/Performance</span><span class="chip week">Submit on Google Classroom</span></div>
+
+<h2>Part 1 · Your Progress Report</h2>
+<p>Each member completes the module on their own device. When you have finished all eight lessons, fill in your name, then take a <b>screenshot</b> of this whole box (or use <b>Print → Save as PDF</b>) and attach it to your submission.</p>
+
+<div class="report" id="report">
+  <div class="row">
+    <div><label for="stuName">Full name</label><input id="stuName" placeholder="Surname, First Name"></div>
+    <div><label for="stuSection">Section</label>
+      <select id="stuSection"><option value="">— choose —</option><option>BSIT 2A</option><option>BSIT 2B</option></select></div>
+  </div>
+  <div id="reportTable"></div>
+  <p style="font-size:.8rem;color:var(--ink-faint);margin:.6rem 0 0"><span id="reportStamp"></span> · IPT1 JavaScript Essentials &amp; Integration Module</p>
+</div>
+<p style="margin-top:.8rem">
+  <button class="btn small secondary" type="button" onclick="window.print()">Print / Save as PDF</button>
+  <button class="btn small secondary" type="button" id="resetProgress">Reset my progress</button>
+</p>
+
+<div class="box note">
+  <span class="box-title">Note</span>
+  <p>Progress is stored only in this browser. If you clear your browser data or switch phones, it starts over — so finish on one device, or take screenshots as you go.</p>
+</div>
+
+<h2>Part 2 · Portfolio Output: a Campus Mini-System</h2>
+<p>With your group, build a small system in which a <b>front end</b> and a <b>back end</b> exchange JSON through a <b>REST API</b>. Choose <b>one</b> theme (or propose your own to me):</p>
+
+<div class="card-grid">
+  <div class="lesson-card"><span class="num">Theme A</span><span class="t">Org Event Sign-up</span><span class="d">Students register for an org event; the organizer can remove a registration. Fields: name, section, event.</span></div>
+  <div class="lesson-card"><span class="num">Theme B</span><span class="t">Lost &amp; Found Board</span><span class="d">Post found items with where they were found; remove an item once it is claimed.</span></div>
+  <div class="lesson-card"><span class="num">Theme C</span><span class="t">Lab Equipment Borrowing</span><span class="d">Log who borrowed which equipment; mark it returned (PUT) or delete the record.</span></div>
+</div>
+
+<h3>Choose your track</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th style="width:50%">Track 1 · Phone or any browser</th><th>Track 2 · Computer with Node.js</th></tr></thead>
+  <tbody><tr>
+    <td>
+      <ol>
+        <li>Open the <b>Student Directory</b> box in <a href="lesson-7.html">Lesson 7.4</a>.</li>
+        <li>Change the server and front end to fit your theme (rename the resource, e.g. <code>/api/events</code>, and change the fields).</li>
+        <li>Press Run and test every feature.</li>
+        <li>Copy all the code from the box into a Google Doc, and add screenshots of it working.</li>
+      </ol>
+    </td>
+    <td>
+      <ol>
+        <li>Download the <a href="starter.zip">starter project (starter.zip)</a>.</li>
+        <li>In the folder, run <code>npm install</code>, then <code>npm start</code>, and open <code>http://localhost:3000</code>.</li>
+        <li>Adapt <code>server.js</code> and <code>public/app.js</code> to your theme.</li>
+        <li>Push it to a GitHub repository and submit the link, with screenshots in the README.</li>
+      </ol>
+    </td>
+  </tr></tbody>
+</table>
+</div>
+
+<h3>Required features</h3>
+<ol>
+  <li><b>GET</b> — list all records, shown on the page.</li>
+  <li><b>POST</b> — add a record from a form; the server answers <b>201</b> with the new record.</li>
+  <li><b>DELETE</b> (or <b>PUT</b> for Theme C) — remove or update a record by id; answer <b>404</b> if it does not exist.</li>
+  <li><b>Server-side validation</b> — reject missing or invalid fields with <b>400</b> and a clear error message.</li>
+  <li><b>Front-end feedback</b> — show loading, success and error messages to the user.</li>
+  <li><b>Safe rendering</b> — user-typed text is displayed with <code>textContent</code>.</li>
+</ol>
+
+<h3>Integration Trace (written, 1 page)</h3>
+<p>In your own words, trace what happens when a user <b>adds a record</b> in your system. Number each step and name the exact function, route, method, status code and data involved — like the six steps in <a href="lesson-7.html">Lesson 7.1</a>. End with one paragraph answering: <i>"Which part of our system would we change first if it had to serve a mobile app as well, and why?"</i></p>
+
+<h3>What to submit (one per group)</h3>
+<ul>
+  <li>Your code (Google Doc for Track 1, or GitHub link for Track 2) with screenshots.</li>
+  <li>Your Integration Trace.</li>
+  <li>Every member's Progress Report screenshot or PDF.</li>
+  <li>Group members' names and each person's contribution, in one or two lines each.</li>
+</ul>
+
+<h2>Scoring guide (20 points)</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Criterion</th><th>Full marks look like…</th><th>Points</th></tr></thead>
+  <tbody>
+    <tr><td><b>Working REST API</b></td><td>GET, POST and DELETE/PUT routes work; correct methods, paths and status codes (200, 201, 204, 400, 404).</td><td>6</td></tr>
+    <tr><td><b>Front-end integration</b></td><td>Page uses <code>fetch</code> with <code>async/await</code>, checks <code>res.ok</code>, renders the list, and refreshes after each change; shows loading and error messages.</td><td>5</td></tr>
+    <tr><td><b>Validation &amp; safety</b></td><td>Server rejects bad input with 400 and a message; user text rendered with <code>textContent</code>.</td><td>3</td></tr>
+    <tr><td><b>Integration Trace</b></td><td>Accurate, complete, ordered steps that name the real functions, route, method, status and JSON; thoughtful answer on the mobile-app question.</td><td>4</td></tr>
+    <tr><td><b>Progress Reports</b></td><td>All members completed all 8 lessons (quiz scores shown).</td><td>2</td></tr>
+    <tr><th colspan="2" style="text-align:right">Total</th><th>20</th></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box tip">
+  <span class="box-title">Going further (optional)</span>
+  <ul>
+    <li>Add a filter using a query string, e.g. <code>GET /api/events?section=2A</code>.</li>
+    <li>Add an automated test for one route (see <a href="lesson-8.html">Lesson 8.8</a>).</li>
+    <li>Track 2: publish your front end on GitHub Pages and your API on a free Node.js host, and restrict CORS to your GitHub Pages address.</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>

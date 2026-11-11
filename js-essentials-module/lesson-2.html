@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 2 · Decisions, Loops & Functions — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="l2">
+<div id="content">
+
+<p class="lesson-kicker">Lesson 2 · Part A · JavaScript Essentials</p>
+<h1>Decisions, Loops &amp; Functions</h1>
+<p class="lede">How does a program choose what to do, repeat work without copy-pasting, and package steps into a reusable tool?</p>
+<div class="meta-row"><span class="chip">⏱ about 50 minutes</span><span class="chip week">Outline Week 2 · Procedural &amp; functional styles</span></div>
+
+<div class="box objectives">
+  <span class="box-title">By the end of this lesson you can</span>
+  <ul>
+    <li>Write <code>if / else if / else</code> and the ternary operator.</li>
+    <li>Explain "truthy" and "falsy" values.</li>
+    <li>Repeat work with <code>for</code>, <code>for…of</code> and <code>while</code>.</li>
+    <li>Write functions three ways: declaration, expression, and arrow function.</li>
+    <li>Use parameters, default values and <code>return</code>.</li>
+    <li>Pass a function into another function — the first step to functional programming.</li>
+  </ul>
+</div>
+
+<div class="box note">
+  <span class="box-title">Good news</span>
+  <p>Much of this lesson will look familiar from C++ and Java. <code>if</code>, <code>for</code>, <code>while</code> and <code>switch</code> use almost the same syntax. Focus your attention on the parts marked <b>different</b>: truthy/falsy values, <code>for…of</code>, and functions as values.</p>
+</div>
+
+<h2>2.1 Making decisions with <code>if</code></h2>
+
+<div class="play" data-title="Try it · grade remarks">
+<textarea>
+const grade = 82;
+
+if (grade >= 90) {
+  console.log("Excellent");
+} else if (grade >= 75) {
+  console.log("Passed");
+} else {
+  console.log("Failed");
+}
+
+// Ternary: condition ? valueIfTrue : valueIfFalse
+const remark = grade >= 75 ? "PASSED" : "FAILED";
+console.log(`Grade ${grade}: ${remark}`);
+</textarea>
+</div>
+
+<p>Change <code>grade</code> to <code>95</code>, then <code>60</code>, and run each time. The <b>ternary</b> on line 12 is a compact <code>if/else</code> that produces a value — handy inside template literals.</p>
+
+<h3>Different: truthy and falsy</h3>
+<p>In Java, an <code>if</code> needs a real <code>boolean</code>. JavaScript accepts <i>any</i> value and treats it as true or false. Only these six values are <b>falsy</b>:</p>
+<p style="text-align:center"><code>false</code> &nbsp; <code>0</code> &nbsp; <code>""</code> (empty string) &nbsp; <code>null</code> &nbsp; <code>undefined</code> &nbsp; <code>NaN</code></p>
+<p>Everything else is <b>truthy</b> — including <code>"0"</code>, <code>"false"</code>, <code>[]</code> and <code>{}</code>.</p>
+
+<div class="play" data-title="Try it · checking a form field">
+<textarea>
+let username = "";   // the user left the box empty
+
+if (username) {
+  console.log(`Welcome, ${username}!`);
+} else {
+  console.log("Please enter your name.");
+}
+
+// A common shortcut: use a default when a value is missing
+const displayName = username || "Guest";
+console.log(displayName);
+</textarea>
+</div>
+
+<details class="think">
+  <summary>Why might <code>const qty = input || 1;</code> be a bug if the user is allowed to type <code>0</code>?</summary>
+  <div><p>Because <code>0</code> is falsy, so <code>0 || 1</code> gives <code>1</code> — the user's real answer is thrown away. Modern JavaScript has <code>??</code> ("nullish coalescing") for this: <code>input ?? 1</code> only uses the default when <code>input</code> is <code>null</code> or <code>undefined</code>, so <code>0 ?? 1</code> stays <code>0</code>.</p></div>
+</details>
+
+<h3><code>switch</code></h3>
+<p>Works like Java's — remember the <code>break</code>.</p>
+<textarea class="code" data-lang="js">
+const day = "Thu";
+switch (day) {
+  case "Mon":
+  case "Thu":
+    console.log("IPT1 lecture today");
+    break;
+  case "Sat":
+  case "Sun":
+    console.log("Weekend");
+    break;
+  default:
+    console.log("Other classes");
+}
+</textarea>
+
+<h2>2.2 Loops</h2>
+<p>The classic <code>for</code> and <code>while</code> loops are the same as in C++ — just use <code>let</code> instead of <code>int</code>.</p>
+
+<div class="play" data-title="Try it · three kinds of loop">
+<textarea>
+// 1. Classic for loop — when you need a counter
+for (let i = 1; i <= 3; i++) {
+  console.log("Attempt", i);
+}
+
+// 2. for...of — loop over each item of a list (DIFFERENT, and very common)
+const sections = ["BSIT 2A", "BSIT 2B"];
+for (const s of sections) {
+  console.log("Section:", s);
+}
+
+// 3. while — repeat until a condition changes
+let savings = 0;
+let weeks = 0;
+while (savings < 500) {
+  savings += 120;   // same as savings = savings + 120
+  weeks++;
+}
+console.log(`Reached ₱${savings} after ${weeks} weeks.`);
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 2</b> <code>let i = 1</code> — the counter. Same three parts as C++: start; condition; step.</li>
+  <li><b>line 8</b> <code>for (const s of sections)</code> reads as "for each <code>s</code> in sections". No index needed. Java's version is <code>for (String s : sections)</code>.</li>
+  <li><b>line 15</b> <code>while</code> keeps going as long as the condition is true. Make sure something inside changes, or the loop never ends.</li>
+</ul>
+
+<div class="box warn">
+  <span class="box-title">Careful</span>
+  <p>An infinite loop (for example, forgetting <code>savings += 120</code>) will freeze this browser tab. If that happens, just reload the page.</p>
+</div>
+
+<div class="box tip">
+  <span class="box-title">Your turn</span>
+  <p>Write a loop that prints the multiplication table of 7 from <code>7 x 1 = 7</code> to <code>7 x 10 = 70</code>. Use the empty box below.</p>
+</div>
+
+<div class="play" data-title="Your code · multiplication table">
+<textarea>
+// Write your loop here, then press Run.
+
+</textarea>
+</div>
+
+<details class="think">
+  <summary>Show one possible answer</summary>
+  <div>
+<textarea class="code" data-lang="js">
+for (let i = 1; i <= 10; i++) {
+  console.log(`7 x ${i} = ${7 * i}`);
+}
+</textarea>
+  </div>
+</details>
+
+<h2>2.3 Functions</h2>
+<p>A function is a named, reusable set of steps. You give it inputs (<b>parameters</b>), it does work, and it can hand back an output with <b><code>return</code></b>. Unlike Java, you do not declare the types of the parameters or of the return value.</p>
+
+<h3>Three ways to write the same function</h3>
+<div class="play" data-title="Try it · function styles">
+<textarea>
+// 1. Function declaration
+function computeAverage(a, b, c) {
+  return (a + b + c) / 3;
+}
+
+// 2. Function expression — a function stored in a variable
+const computeAverage2 = function (a, b, c) {
+  return (a + b + c) / 3;
+};
+
+// 3. Arrow function — short and modern (you will see this EVERYWHERE)
+const computeAverage3 = (a, b, c) => (a + b + c) / 3;
+
+console.log(computeAverage(85, 90, 78));
+console.log(computeAverage2(85, 90, 78));
+console.log(computeAverage3(85, 90, 78));
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 2</b> <code>function name(params) { … }</code> — closest to a Java method, but with no return type and no parameter types.</li>
+  <li><b>line 7</b> A function is a <b>value</b>, just like a number. You can put it in a variable.</li>
+  <li><b>line 12</b> Arrow function: <code>(params) =&gt; result</code>. If the body is a single expression, it is returned automatically — no braces, no <code>return</code>.</li>
+</ul>
+
+<h3>Arrow functions with a body</h3>
+<p>If you need more than one line, add braces — and then you <i>must</i> write <code>return</code>.</p>
+<div class="play" data-title="Try it · arrows, defaults and return">
+<textarea>
+const toRemark = (grade, passing = 75) => {
+  if (grade >= passing) {
+    return "PASSED";
+  }
+  return "FAILED";
+};
+
+console.log(toRemark(80));        // uses default passing = 75
+console.log(toRemark(80, 85));    // passing = 85 this time
+
+// One parameter? Parentheses are optional.
+const square = n => n * n;
+console.log(square(9));
+
+// Forgetting return gives undefined:
+const broken = (a, b) => { a + b; };
+console.log(broken(2, 3));
+</textarea>
+</div>
+
+<details class="think">
+  <summary>Why does <code>broken(2, 3)</code> print <code>undefined</code>?</summary>
+  <div><p>Because the arrow function uses braces <code>{ }</code>, so it has a full body — and that body never says <code>return</code>. A function without <code>return</code> gives back <code>undefined</code>. Fix: <code>(a, b) =&gt; a + b</code> (no braces) or <code>(a, b) =&gt; { return a + b; }</code>.</p></div>
+</details>
+
+<h3>Scope: where a variable lives</h3>
+<p><code>let</code> and <code>const</code> are <b>block-scoped</b>, like local variables in Java: a variable created inside <code>{ }</code> does not exist outside it.</p>
+<textarea class="code" data-lang="js">
+const school = "PSU";              // outer — visible everywhere below
+function greet() {
+  const message = `Hello from ${school}`;  // inner — only inside greet()
+  return message;
+}
+console.log(greet());    // works
+console.log(message);    // ReferenceError: message is not defined
+</textarea>
+
+<h2>2.4 Functions as values (the functional style)</h2>
+<p>Here is where JavaScript really differs from older Java. Since a function is a value, you can <b>pass a function into another function</b>. The function you pass in is called a <b>callback</b>. This one idea powers button clicks (Lesson 4), waiting for data (Lesson 5), and server routes (Lesson 6).</p>
+
+<div class="play" data-title="Try it · callbacks">
+<textarea>
+// applyToAll takes a list AND a function, and uses the function on each item
+function applyToAll(list, action) {
+  for (const item of list) {
+    action(item);
+  }
+}
+
+const names = ["Ana", "Ben", "Carla"];
+
+applyToAll(names, name => console.log(`Hello, ${name}!`));
+applyToAll(names, name => console.log(name.toUpperCase()));
+</textarea>
+</div>
+
+<div class="analogy box">
+  <span class="box-title">Everyday analogy</span>
+  <p>Think of <code>applyToAll</code> as a class officer going down the attendance list. The officer knows how to <i>go through the list</i>. You hand them an instruction card (the callback): "greet each one", or "collect a contribution from each one". Same officer, different instruction card.</p>
+</div>
+
+<p>In Lesson 3 you will meet built-in versions of this idea — <code>forEach</code>, <code>map</code> and <code>filter</code> — that every JavaScript developer uses daily.</p>
+
+<h2>Summary</h2>
+<ul>
+  <li><code>if/else</code>, <code>switch</code>, <code>for</code>, <code>while</code> look like C++/Java.</li>
+  <li>Falsy values: <code>false, 0, "", null, undefined, NaN</code>. Everything else is truthy. Use <code>??</code> when <code>0</code> or <code>""</code> are valid answers.</li>
+  <li><code>for (const x of list)</code> loops over each item.</li>
+  <li>Functions: declaration, expression, arrow <code>(a, b) =&gt; a + b</code>. Braces mean you must write <code>return</code>.</li>
+  <li>Functions are values: you can store them and pass them as <b>callbacks</b>.</li>
+</ul>
+
+<div class="quiz" data-id="l2" id="quiz">
+  <div class="q" data-answer="2">
+    <p>Which of these values is <b>truthy</b>?</p>
+    <ul><li><code>0</code></li><li><code>""</code></li><li><code>"0"</code></li><li><code>null</code></li></ul>
+    <p class="why"><code>"0"</code> is a non-empty string, so it is truthy. The number <code>0</code>, the empty string and <code>null</code> are falsy.</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>What does <code>const label = 60 &gt;= 75 ? "PASS" : "FAIL";</code> store?</p>
+    <ul><li><code>"FAIL"</code></li><li><code>"PASS"</code></li><li><code>false</code></li><li><code>undefined</code></li></ul>
+    <p class="why">The condition is false, so the ternary picks the value after the colon.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>Which loop is the cleanest way to print every item in <code>const fruits = ["pili", "mango"]</code>?</p>
+    <ul><li><code>while (fruits) { … }</code></li><li><code>for (fruits) { … }</code></li><li><code>for (let f in 10) { … }</code></li><li><code>for (const f of fruits) { console.log(f); }</code></li></ul>
+    <p class="why"><code>for…of</code> visits each item of an array directly, without an index.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>What does <code>const add = (a, b) =&gt; { a + b; }; add(1, 2)</code> return?</p>
+    <ul><li><code>3</code></li><li><code>undefined</code></li><li><code>"12"</code></li><li>an error</li></ul>
+    <p class="why">With braces the arrow function has a body and needs an explicit <code>return</code>. Without it, the result is <code>undefined</code>.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>A function that is passed into another function, to be called later, is called a…</p>
+    <ul><li>constructor</li><li>constant</li><li>callback</li><li>class</li></ul>
+    <p class="why">A callback is a function handed to another function, which "calls it back" when needed — on each item, on a click, or when data arrives.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>A user is allowed to enter <code>0</code> for "number of absences". Which line keeps their <code>0</code> instead of replacing it with a default of 3?</p>
+    <ul><li><code>const a = input || 3;</code></li><li><code>const a = input ?? 3;</code></li><li><code>const a = !input;</code></li><li><code>const a = input &amp;&amp; 3;</code></li></ul>
+    <p class="why"><code>??</code> only falls back when the value is <code>null</code> or <code>undefined</code>. <code>||</code> also replaces <code>0</code>, because <code>0</code> is falsy.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

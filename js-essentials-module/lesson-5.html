@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 5 · Asynchronous JS & fetch() — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="l5">
+<div id="content">
+
+<p class="lesson-kicker">Lesson 5 · Part B · The Front End</p>
+<h1>Asynchronous JavaScript &amp; <code>fetch()</code></h1>
+<p class="lede">Asking a server for data takes time — sometimes seconds. How does JavaScript wait for the answer without freezing the whole page?</p>
+<div class="meta-row"><span class="chip">⏱ about 60 minutes</span><span class="chip week">Outline Weeks 6 &amp; 11 · APIs, front-end integration</span></div>
+
+<div class="box objectives">
+  <span class="box-title">By the end of this lesson you can</span>
+  <ul>
+    <li>Explain the difference between synchronous and asynchronous code.</li>
+    <li>Predict the output order of code that uses <code>setTimeout</code>.</li>
+    <li>Describe the three states of a Promise and use <code>.then()</code> / <code>.catch()</code>.</li>
+    <li>Write the same logic with <code>async</code> / <code>await</code> and <code>try</code> / <code>catch</code>.</li>
+    <li>Call a real web API with <code>fetch()</code>, check the status, and read the JSON.</li>
+    <li>Run several requests at the same time with <code>Promise.all</code>.</li>
+  </ul>
+</div>
+
+<h2>5.1 Waiting without freezing</h2>
+<div class="box analogy">
+  <span class="box-title">Everyday analogy · the fast-food counter</span>
+  <p><b>Synchronous (blocking):</b> the cashier takes your order, then stands at the grill until your burger is cooked, and only then serves the next person. The line does not move.</p>
+  <p><b>Asynchronous (non-blocking):</b> the cashier takes your order, hands you a <b>number</b>, and immediately serves the next customer. When your food is ready, your number is called and you pick it up.</p>
+</div>
+<p>JavaScript in the browser has <b>one</b> main thread — one cashier. If it stood and waited for a slow server, buttons would stop working and the page would freeze. So for slow jobs (network requests, timers, reading files, database queries) JavaScript works asynchronously: it starts the job, keeps going, and handles the result later.</p>
+
+<div class="box java">
+  <span class="box-title">If you think in Java</span>
+  <p>In Java you might start a new <code>Thread</code> to avoid blocking. JavaScript does not make you manage threads. Instead, the runtime (browser or Node.js) does the slow work in the background and puts your callback in a queue — the <b>event loop</b> — to run when the main thread is free.</p>
+</div>
+
+<h2>5.2 Seeing it happen: <code>setTimeout</code></h2>
+<p><code>setTimeout(callback, ms)</code> runs a function after a delay. Before you press Run, <b>predict</b> the order of the four lines.</p>
+
+<div class="play" data-title="Try it · predict the order">
+<textarea>
+console.log("1. Take order");
+
+setTimeout(() => {
+  console.log("3. Burger is ready! (after 1 second)");
+}, 1000);
+
+setTimeout(() => {
+  console.log("2.5 Drinks ready (after 0 ms)");
+}, 0);
+
+console.log("2. Serve next customer");
+</textarea>
+</div>
+
+<details class="think">
+  <summary>Why does "Drinks ready" print after "Serve next customer", even with a delay of 0 ms?</summary>
+  <div><p>Because a timer's callback never interrupts code that is already running. It waits in the queue until the current script finishes. So <i>all</i> the normal, synchronous lines run first, then the waiting callbacks run in order of readiness. This is the event loop at work.</p></div>
+</details>
+
+<h2>5.3 Callbacks, and why they get messy</h2>
+<p>The oldest way to handle "do this when it is done" is a callback. It works, but when one step depends on another, callbacks nest deeper and deeper. Programmers call this <b>callback hell</b> (or the "pyramid of doom").</p>
+<textarea class="code" data-lang="js">
+// Each step needs the result of the one before it...
+getStudent(2401, (student) => {
+  getGrades(student.id, (grades) => {
+    getSubjectNames(grades, (names) => {
+      showReport(student, grades, names, (err) => {
+        // ...and error handling must be repeated at every level
+      });
+    });
+  });
+});
+</textarea>
+<p>Promises and <code>async/await</code> were added to JavaScript to fix exactly this.</p>
+
+<h2>5.4 Promises</h2>
+<p>A <b>Promise</b> is an object that stands for a value that is not ready yet — like the number on your fast-food receipt. A Promise is always in one of three states:</p>
+<div class="flow">
+  <div class="node"><b>pending</b>still working</div>
+  <div class="arrow">→</div>
+  <div class="node"><b>fulfilled</b>success — here is the value</div>
+  <div class="node"><b>rejected</b>failed — here is the error</div>
+</div>
+<p>You attach <code>.then(callback)</code> for success and <code>.catch(callback)</code> for failure. Below, <code>getGrade</code> pretends to be a slow server.</p>
+
+<div class="play" data-title="Try it · a promise">
+<textarea>
+// A fake "slow server" that returns a Promise
+function getGrade(studentId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (studentId === 2401) {
+        resolve({ id: 2401, subject: "IPT1", grade: 1.75 });   // success
+      } else {
+        reject(new Error(`No record for student ${studentId}`)); // failure
+      }
+    }, 800);
+  });
+}
+
+console.log("Requesting...");
+
+getGrade(2401)
+  .then(record => console.log("Got it:", record))
+  .catch(err => console.error("Problem:", err.message));
+
+getGrade(9999)
+  .then(record => console.log("Got it:", record))
+  .catch(err => console.error("Problem:", err.message));
+
+console.log("...and the page is not frozen while we wait.");
+</textarea>
+</div>
+
+<p>In real work you rarely <i>create</i> Promises with <code>new Promise</code> — functions like <code>fetch()</code> create them for you. Your job is mostly to <b>use</b> them.</p>
+
+<h2>5.5 <code>async</code> / <code>await</code>: asynchronous code that reads like normal code</h2>
+<p>Inside a function marked <code>async</code>, you can write <code>await</code> in front of a Promise. JavaScript pauses <i>that function</i> until the Promise settles, then gives you the value — while the rest of the page keeps running. Errors are handled with ordinary <code>try / catch</code>, just like Java.</p>
+
+<div class="play" data-title="Try it · async/await">
+<textarea>
+function getGrade(studentId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      studentId === 2401
+        ? resolve({ id: 2401, subject: "IPT1", grade: 1.75 })
+        : reject(new Error(`No record for student ${studentId}`));
+    }, 800);
+  });
+}
+
+async function showGrade(id) {
+  try {
+    console.log(`Looking up ${id}...`);
+    const record = await getGrade(id);       // wait here, without freezing
+    console.log(`${record.subject}: ${record.grade}`);
+  } catch (err) {
+    console.error("Sorry:", err.message);
+  } finally {
+    console.log("(lookup finished)");
+  }
+}
+
+await showGrade(2401);
+await showGrade(1234);
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 11</b> <code>async</code> marks a function that can use <code>await</code>. An async function always returns a Promise.</li>
+  <li><b>line 14</b> <code>await</code> unwraps the Promise: <code>record</code> is the actual object, not a Promise.</li>
+  <li><b>line 16</b> If the Promise is <b>rejected</b>, <code>await</code> throws, and <code>catch</code> handles it.</li>
+  <li><b>line 23</b> Here we can use <code>await</code> at the top because this box runs your code inside an async function. In a normal script file, wrap it in an async function as on line 11.</li>
+</ul>
+
+<details class="think">
+  <summary>Rewrite the callback-hell example from 5.3 with <code>async/await</code>. What changed?</summary>
+  <div>
+<textarea class="code" data-lang="js">
+async function buildReport(id) {
+  try {
+    const student = await getStudent(id);
+    const grades  = await getGrades(student.id);
+    const names   = await getSubjectNames(grades);
+    showReport(student, grades, names);
+  } catch (err) {
+    console.error("Could not build report:", err.message);  // one place for all errors
+  }
+}
+</textarea>
+  <p>The steps now read top to bottom, there is no nesting, and a single <code>try/catch</code> handles an error from any step.</p>
+  </div>
+</details>
+
+<h2>5.6 <code>fetch()</code>: talking to a real API</h2>
+<p>An <b>API</b> (Application Programming Interface) is a door a system opens for other programs. A <b>web API</b> answers HTTP requests, usually with JSON. The browser's built-in <code>fetch(url)</code> sends a request and returns a Promise of the response.</p>
+
+<h3>A quick picture of HTTP</h3>
+<div class="flow">
+  <div class="node"><b>Client</b>browser / app</div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Request</b>GET /users<br><small>method + URL (+ body)</small></div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Server</b>API</div>
+  <div class="arrow">→</div>
+  <div class="node"><b>Response</b>200 OK<br><small>status + JSON body</small></div>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Status code</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>200</code> OK · <code>201</code> Created</td><td>Success</td></tr>
+    <tr><td><code>400</code> Bad Request</td><td>The client sent something wrong (e.g., a missing field)</td></tr>
+    <tr><td><code>404</code> Not Found</td><td>That resource does not exist</td></tr>
+    <tr><td><code>500</code> Internal Server Error</td><td>The server's code crashed</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>The box below calls <b>JSONPlaceholder</b>, a free practice API with fake data. You need an internet connection for this one.</p>
+
+<div class="play" data-title="Try it · fetch real data" data-sub="needs internet">
+<textarea>
+async function loadUsers() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/users");
+    console.log("Status:", response.status, response.ok);
+
+    if (!response.ok) {
+      throw new Error(`Server answered ${response.status}`);
+    }
+
+    const users = await response.json();   // parse the JSON body
+    console.log(`Received ${users.length} users`);
+
+    users.slice(0, 5).forEach(u => {
+      console.log(`- ${u.name} (${u.email}) from ${u.address.city}`);
+    });
+  } catch (err) {
+    console.error("Could not load users:", err.message);
+  }
+}
+
+await loadUsers();
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 3</b> <code>await fetch(url)</code> waits for the <b>response headers</b> — the status code arrives before the body.</li>
+  <li><b>line 6</b> Important: <code>fetch</code> only rejects if the network fails. A <code>404</code> or <code>500</code> still "succeeds", so always check <code>response.ok</code> yourself.</li>
+  <li><b>line 10</b> <code>response.json()</code> reads the body and runs <code>JSON.parse</code> for you. It also returns a Promise, so it needs <code>await</code> too.</li>
+</ul>
+
+<div class="box tip">
+  <span class="box-title">Your turn</span>
+  <ol>
+    <li>Change the URL to <code>https://jsonplaceholder.typicode.com/users/3</code>. You now get <b>one</b> object, not an array — adjust the code to print that user's name.</li>
+    <li>Change it to <code>.../users/999</code>. What status do you get? Does your <code>if (!response.ok)</code> catch it?</li>
+    <li>Change the domain to something misspelled, like <code>jsonplacehold.typicode.com</code>. Which line handles that error?</li>
+  </ol>
+</div>
+
+<h3>Showing fetched data on a page</h3>
+<p>Now combine Lesson 4 and Lesson 5: fetch the data, then render it. Notice the <b>loading</b> and <b>error</b> messages — good front ends always tell the user what is happening.</p>
+
+<div class="play" data-mode="html" data-title="Try it · fetch + DOM" data-sub="needs internet">
+<textarea>
+<h3>Posts</h3>
+<button id="load">Load posts</button>
+<p id="status"></p>
+<ol id="posts"></ol>
+
+<script>
+  const btn = document.querySelector("#load");
+  const status = document.querySelector("#status");
+  const list = document.querySelector("#posts");
+
+  btn.addEventListener("click", async () => {
+    status.textContent = "Loading…";
+    btn.disabled = true;
+    try {
+      const res = await fetch("https://jsonplaceholder.typicode.com/posts?_limit=5");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const posts = await res.json();
+
+      list.innerHTML = "";
+      posts.forEach(p => {
+        const li = document.createElement("li");
+        li.textContent = p.title;
+        list.appendChild(li);
+      });
+      status.textContent = `Loaded ${posts.length} posts.`;
+    } catch (err) {
+      status.textContent = "Could not load posts: " + err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</textarea>
+</div>
+
+<h3>Sending data: POST with a JSON body</h3>
+<p><code>fetch</code> sends a GET by default. To <b>create</b> something, send a POST with the data as JSON. Look closely — you will write exactly this in Lesson 7.</p>
+
+<div class="play" data-title="Try it · POST" data-sub="needs internet">
+<textarea>
+const newPost = { title: "IPT1 Module", body: "Learning fetch!", userId: 1 };
+
+const res = await fetch("https://jsonplaceholder.typicode.com/posts", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(newPost)              // object → JSON text
+});
+
+console.log("Status:", res.status);         // 201 Created
+const saved = await res.json();
+console.log("Server answered:", saved);     // now it has an id
+</textarea>
+</div>
+
+<ul class="line-notes">
+  <li><b>line 4</b> <code>method</code> tells the server what you want to do.</li>
+  <li><b>line 5</b> The <code>Content-Type</code> header tells the server "the body is JSON", so it knows how to read it.</li>
+  <li><b>line 6</b> The body must be text, so we <code>JSON.stringify</code> the object (Lesson 3).</li>
+</ul>
+
+<h2>5.7 Doing several things at once: <code>Promise.all</code></h2>
+<p>If two requests do not depend on each other, do not wait for one before starting the other. Start both, then wait for <b>all</b> of them.</p>
+<div class="play" data-title="Try it · one by one vs together">
+<textarea>
+const wait = (ms, value) => new Promise(res => setTimeout(() => res(value), ms));
+
+let start = Date.now();
+const a = await wait(700, "profile");
+const b = await wait(700, "grades");
+console.log("One by one:", a, b, `${Date.now() - start} ms`);
+
+start = Date.now();
+const [c, d] = await Promise.all([wait(700, "profile"), wait(700, "grades")]);
+console.log("Together:  ", c, d, `${Date.now() - start} ms`);
+</textarea>
+</div>
+
+<h2>Summary</h2>
+<ul>
+  <li>Slow jobs (network, timers, databases) are <b>asynchronous</b>: JavaScript starts them and continues, so the page never freezes.</li>
+  <li>A <b>Promise</b> is pending, then fulfilled or rejected. Use <code>.then</code>/<code>.catch</code>, or…</li>
+  <li><code>async</code>/<code>await</code> + <code>try</code>/<code>catch</code> — asynchronous code that reads top to bottom.</li>
+  <li><code>const res = await fetch(url)</code> → check <code>res.ok</code> → <code>await res.json()</code>.</li>
+  <li>POST: <code>method</code>, <code>headers: {"Content-Type": "application/json"}</code>, <code>body: JSON.stringify(data)</code>.</li>
+  <li>Use <code>Promise.all</code> for independent requests.</li>
+</ul>
+
+<div class="quiz" data-id="l5" id="quiz">
+  <div class="q" data-answer="3">
+    <p>What is printed, in order? <code>console.log("A"); setTimeout(() =&gt; console.log("B"), 0); console.log("C");</code></p>
+    <ul><li>A B C</li><li>B A C</li><li>C B A</li><li>A C B</li></ul>
+    <p class="why">The timer callback waits until the current script finishes, even with 0 ms. So A, then C, then B.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>Which are the three states of a Promise?</p>
+    <ul><li>start, run, stop</li><li>pending, fulfilled, rejected</li><li>open, sent, closed</li><li>waiting, true, false</li></ul>
+    <p class="why">A Promise starts pending and settles as either fulfilled (with a value) or rejected (with an error).</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>The server replies with status <code>404</code>. What does <code>await fetch(url)</code> do?</p>
+    <ul><li>It resolves normally; you must check <code>response.ok</code> to notice the 404.</li><li>It throws an error automatically.</li><li>It retries until it gets 200.</li><li>It returns <code>undefined</code>.</li></ul>
+    <p class="why"><code>fetch</code> only rejects on network failure. HTTP error codes still produce a response, so check <code>response.ok</code> or <code>response.status</code>.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>Why do we write <code>await response.json()</code> with <code>await</code>?</p>
+    <ul><li>Because JSON is always slow to type.</li><li>To convert the object into text.</li><li>Because reading and parsing the body also returns a Promise.</li><li>It is optional and does nothing.</li></ul>
+    <p class="why">The body may still be arriving over the network, so <code>.json()</code> returns a Promise of the parsed data.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>When sending JSON with <code>fetch</code>, which pair is required?</p>
+    <ul>
+      <li><code>method: "GET"</code> and <code>body: data</code></li>
+      <li><code>mode: "json"</code> and <code>body: data</code></li>
+      <li><code>type: "object"</code> and <code>data: obj</code></li>
+      <li><code>headers: {"Content-Type": "application/json"}</code> and <code>body: JSON.stringify(data)</code></li>
+    </ul>
+    <p class="why">The header tells the server the format; the body must be the object converted to JSON text.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>You need a student's profile and their grades, and neither request depends on the other. What is the faster approach?</p>
+    <ul><li>Await the profile, then await the grades.</li><li>Start both and wait with <code>Promise.all</code>.</li><li>Use a <code>while</code> loop until both arrive.</li><li>Use <code>setTimeout</code> for each one.</li></ul>
+    <p class="why"><code>Promise.all</code> runs independent requests at the same time, so the total wait is about the time of the slowest one.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

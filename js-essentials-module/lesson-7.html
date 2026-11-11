@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 7 · Connecting Front End & Back End — IPT1 JS Module</title>
+<script>try{var s=JSON.parse(localStorage.getItem("ipt1-js-module-v1"));if(s&&s.theme)document.documentElement.setAttribute("data-theme",s.theme)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%225%22 fill=%22%23f2c94c%22/%3E%3Ctext x=%2228%22 y=%2227%22 font-family=%22Arial%22 font-weight=%22900%22 font-size=%2215%22 text-anchor=%22end%22 fill=%22%231d1d1d%22%3EJS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/sim.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="l7">
+<div id="content">
+
+<p class="lesson-kicker">Lesson 7 · Part C · Integration</p>
+<h1>Connecting the Front End to the Back End</h1>
+<p class="lede">You can build a page (Lesson 4), call an API (Lesson 5) and build an API (Lesson 6). Now we join them into one working system — and learn to fix the error that trips up almost every beginner.</p>
+<div class="meta-row"><span class="chip">⏱ about 60 minutes</span><span class="chip week">Outline Week 11 · Frontend–Backend Integration</span></div>
+
+<div class="box objectives">
+  <span class="box-title">By the end of this lesson you can</span>
+  <ul>
+    <li>Trace the complete path of a request from a button click to the server and back to the screen.</li>
+    <li>Explain two ways to deploy a front end with its back end.</li>
+    <li>Explain what CORS is, read a CORS error, and fix it on the correct side.</li>
+    <li>Build a small app that lists, adds and deletes records through a REST API.</li>
+    <li>Recognise the same integration in a React component.</li>
+    <li>Compare REST with GraphQL, and debug common integration errors.</li>
+  </ul>
+</div>
+
+<h2>7.1 The big picture</h2>
+<p>A typical web system has three tiers. Each one is a separate program, and <b>integration</b> is the work of making them cooperate through agreed formats (HTTP and JSON).</p>
+
+<div class="flow">
+  <div class="node"><b>Front end</b>HTML + CSS + JS<br><small>runs in the browser</small></div>
+  <div class="arrow">⇄<br><small>HTTP + JSON</small></div>
+  <div class="node"><b>Back end</b>Node.js + Express<br><small>runs on the server</small></div>
+  <div class="arrow">⇄<br><small>SQL / queries</small></div>
+  <div class="node"><b>Database</b>MySQL, MongoDB…<br><small>stores the data</small></div>
+</div>
+
+<h3>One click, start to finish</h3>
+<p>What happens when a user types a name and presses <b>Add</b>?</p>
+<ol class="steps">
+  <li><b>Event</b> — the browser fires a <code>submit</code> event; your listener runs (Lesson 4).</li>
+  <li><b>Request</b> — your code calls <code>fetch("…/api/students", { method: "POST", body: JSON.stringify(data) })</code> (Lesson 5).</li>
+  <li><b>Route</b> — Express matches <code>POST /api/students</code>; <code>express.json()</code> fills <code>req.body</code> (Lesson 6).</li>
+  <li><b>Logic</b> — the route validates the data and saves it (in an array today; in a database in real life).</li>
+  <li><b>Response</b> — the server answers <code>201 Created</code> with the new record as JSON.</li>
+  <li><b>Update</b> — the front end reads <code>await res.json()</code> and re-renders the list (Lessons 3–4).</li>
+</ol>
+
+<h2>7.2 Two ways to run a front end with its back end</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th></th><th>A · Express serves the page too</th><th>B · Separate front end and API</th></tr></thead>
+  <tbody>
+    <tr><td><b>How</b></td><td>Put <code>index.html</code> and <code>app.js</code> in a <code>public/</code> folder and add <code>app.use(express.static("public"))</code></td><td>The page runs on one server (e.g., VS Code Live Server on port 5500, or GitHub Pages); the API runs on another (port 3000, or a cloud host)</td></tr>
+    <tr><td><b>URLs in fetch</b></td><td>Relative: <code>fetch("/api/students")</code></td><td>Full: <code>fetch("http://localhost:3000/api/students")</code></td></tr>
+    <tr><td><b>Origin</b></td><td>Same origin — no CORS needed</td><td>Different origins — <b>the API must allow CORS</b></td></tr>
+    <tr><td><b>Common in</b></td><td>small projects, the starter project in this module</td><td>React/Vue apps, mobile apps, microservices</td></tr>
+  </tbody>
+</table>
+</div>
+
+<textarea class="code" data-lang="text" data-file="Option A — project folder">
+student-directory/
+├── package.json
+├── server.js          ← Express API + app.use(express.static("public"))
+└── public/
+    ├── index.html     ← the page
+    └── app.js         ← front-end JavaScript that calls fetch("/api/...")
+</textarea>
+
+<h2>7.3 CORS: the error everyone meets</h2>
+<p>An <b>origin</b> is the combination of protocol, host and port: <code>http://localhost:5500</code> and <code>http://localhost:3000</code> are <i>different</i> origins, even on the same computer.</p>
+<p>For security, browsers follow the <b>same-origin policy</b>: a page's JavaScript may send a request to another origin, but the browser will <b>not let the page read the answer</b> unless that server says it is allowed. The server says so with a response header: <code>Access-Control-Allow-Origin</code>. This system is called <b>CORS</b> — Cross-Origin Resource Sharing.</p>
+
+<div class="box analogy">
+  <span class="box-title">Everyday analogy</span>
+  <p>You (the page from origin 5500) send a letter to another office (the API on 3000). The guard at <i>your</i> building (the browser) opens the reply first. If the reply does not carry the other office's stamp saying "OK to share with 5500", the guard throws it away — even though the other office did answer.</p>
+</div>
+
+<p>Run the box below. The page pretends to be at <code>http://localhost:5500</code> and calls an API at <code>http://localhost:3000</code> that has <b>not</b> enabled CORS. Watch the console.</p>
+
+<div class="play" data-mode="html" data-server="on" data-title="Try it · a CORS error, then the fix" data-sub="simulated browser + server">
+<textarea>
+<p><small>This page is at <b>http://localhost:5500</b>. The API is at <b>http://localhost:3000</b>.</small></p>
+<button id="go">Call the API</button>
+<p id="out"></p>
+
+<!-- ===== server.js (simulated) ===== -->
+<script>
+  const express = require("express");
+  const cors = require("cors");
+  const api = express();
+
+  // FIX: remove the // on the next line, then press Run again
+  // api.use(cors());
+
+  api.get("/api/hello", (req, res) => {
+    console.log("[server] got the request and answered 200");
+    res.json({ message: "Hello from the API!" });
+  });
+  api.listen(3000);
+</script>
+
+<!-- ===== app.js (front end) ===== -->
+<script>
+  document.querySelector("#go").addEventListener("click", async () => {
+    const out = document.querySelector("#out");
+    try {
+      const res = await fetch("http://localhost:3000/api/hello");
+      const data = await res.json();
+      out.textContent = "✅ " + data.message;
+    } catch (err) {
+      out.textContent = "❌ " + err.message + " (see the console below)";
+    }
+  });
+</script>
+</textarea>
+</div>
+
+<p>Press <b>Call the API</b>. Notice two things in the console: the <b>server did receive the request and answer 200</b>, but the browser blocked the page from reading it. Now uncomment <code>api.use(cors());</code>, press <b>▶ Run</b>, and call it again.</p>
+
+<details class="think">
+  <summary>A classmate gets a CORS error and tries to fix it by changing the <code>fetch()</code> code in the front end. Will that work? Which side must change?</summary>
+  <div><p>No. CORS permission is granted by the <b>server</b> — the one receiving the request — by sending the <code>Access-Control-Allow-Origin</code> header (in Express, <code>app.use(cors())</code>). The front end cannot give itself permission; otherwise the protection would be meaningless. The other fix is option A from 7.2: serve the page and API from the same origin.</p></div>
+</details>
+
+<div class="box warn">
+  <span class="box-title">In production</span>
+  <p><code>cors()</code> with no options allows <b>every</b> website. For a real system, list only your own front end: <code>app.use(cors({ origin: "https://yourname.github.io" }))</code>.</p>
+</div>
+
+<h2>7.4 Build it: a Student Directory</h2>
+<p>This box contains a complete, working system: a simulated <code>server.js</code> with a REST API, and a front end that lists, adds and deletes students. Run it, use it, then read the code section by section.</p>
+
+<div class="play" data-mode="html" data-server="on" data-title="Try it · full-stack Student Directory" data-sub="simulated browser + server">
+<textarea>
+<style>
+  li { margin: .3rem 0; }
+  li button { margin-left: .5rem; font-size: .8rem; padding: .1rem .5rem; }
+  #status { color: #555; font-size: .9rem; }
+  .error { color: #b23a3a !important; }
+</style>
+
+<h3>Student Directory</h3>
+<form id="form">
+  <input id="name" placeholder="Name" required>
+  <select id="section"><option>2A</option><option>2B</option></select>
+  <button>Add</button>
+</form>
+<p id="status">Loading…</p>
+<ul id="list"></ul>
+
+<!-- ======================= server.js ======================= -->
+<script>
+  const express = require("express");
+  const cors = require("cors");
+  const server = express();
+  server.use(cors());
+  server.use(express.json());
+
+  let students = [
+    { id: 1, name: "Ana Reyes", section: "2A" },
+    { id: 2, name: "Ben Cruz",  section: "2B" }
+  ];
+  let nextId = 3;
+
+  server.get("/api/students", (req, res) => res.json(students));
+
+  server.post("/api/students", (req, res) => {
+    const { name, section } = req.body;
+    if (!name || !["2A", "2B"].includes(section)) {
+      return res.status(400).json({ error: "Valid name and section (2A/2B) required" });
+    }
+    const s = { id: nextId++, name: name.trim(), section };
+    students.push(s);
+    console.log("[server] created", s);
+    res.status(201).json(s);
+  });
+
+  server.delete("/api/students/:id", (req, res) => {
+    const id = Number(req.params.id);
+    const before = students.length;
+    students = students.filter(s => s.id !== id);
+    if (students.length === before) return res.status(404).json({ error: "Not found" });
+    console.log("[server] deleted", id);
+    res.sendStatus(204);
+  });
+
+  server.listen(3000);
+</script>
+
+<!-- ======================== app.js ========================= -->
+<script>
+  const API = "http://localhost:3000/api/students";
+  const list = document.querySelector("#list");
+  const status = document.querySelector("#status");
+
+  function showStatus(msg, isError = false) {
+    status.textContent = msg;
+    status.className = isError ? "error" : "";
+  }
+
+  // READ: get all students and draw them
+  async function loadStudents() {
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const students = await res.json();
+      render(students);
+      showStatus(`${students.length} student(s)`);
+    } catch (err) {
+      showStatus("Could not load: " + err.message, true);
+    }
+  }
+
+  function render(students) {
+    list.innerHTML = "";
+    students.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = `${s.name} — BSIT ${s.section} `;
+      const del = document.createElement("button");
+      del.textContent = "Delete";
+      del.addEventListener("click", () => deleteStudent(s.id));
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+  }
+
+  // CREATE: send the form to the API
+  document.querySelector("#form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nameInput = document.querySelector("#name");
+    const body = { name: nameInput.value, section: document.querySelector("#section").value };
+    showStatus("Saving…");
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const { error } = await res.json();
+      return showStatus(error, true);
+    }
+    nameInput.value = "";
+    loadStudents();                 // refresh from the server
+  });
+
+  // DELETE
+  async function deleteStudent(id) {
+    const res = await fetch(`${API}/${id}`, { method: "DELETE" });
+    if (res.status === 204) loadStudents();
+    else showStatus("Delete failed: " + res.status, true);
+  }
+
+  loadStudents();   // first load
+</script>
+</textarea>
+</div>
+
+<h3>Reading the code</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Part</th><th>What to notice</th></tr></thead>
+  <tbody>
+    <tr><td><b>server.js</b> — <code>cors()</code> and <code>express.json()</code></td><td>Middleware that allows the page's origin and parses JSON bodies.</td></tr>
+    <tr><td><b>server.js</b> — POST route</td><td>The server <b>validates</b> the section even though the front end uses a dropdown. Anyone can send a request with a tool like curl, skipping your form completely.</td></tr>
+    <tr><td><b>app.js</b> — <code>loadStudents()</code></td><td>The <b>server is the source of truth</b>. After every change, the page asks the server for the current list instead of guessing.</td></tr>
+    <tr><td><b>app.js</b> — <code>render()</code></td><td>Uses <code>createElement</code> and <code>textContent</code>, because names are typed by users (XSS-safe, Lesson 4).</td></tr>
+    <tr><td><b>app.js</b> — error handling</td><td>Every <code>fetch</code> checks <code>res.ok</code> and shows the server's error message to the user.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box tip">
+  <span class="box-title">Your turn — three upgrades</span>
+  <ol>
+    <li><b>Server:</b> reject names shorter than 2 characters with a 400.</li>
+    <li><b>Server + front end:</b> add a route <code>GET /api/students?section=2A</code> (Lesson 6.5), and a filter dropdown on the page that uses it.</li>
+    <li><b>Challenge:</b> add an <b>Edit</b> button that sends <code>PUT /api/students/:id</code> with a new name (use <code>prompt("New name?")</code> to ask).</li>
+  </ol>
+</div>
+
+<h2>7.5 The same front end in React</h2>
+<p>In Outline Week 11 the front end is built with <b>React</b>. Here is the "load the list" part as a React component, for reading only. Compare it with <code>loadStudents()</code> and <code>render()</code> above — the integration is identical; React just handles the re-rendering.</p>
+
+<textarea class="code" data-lang="js" data-file="StudentList.jsx (React — read only)">
+import { useEffect, useState } from "react";
+
+export default function StudentList() {
+  const [students, setStudents] = useState([]);   // the data (state)
+  const [error, setError] = useState("");
+
+  useEffect(() => {                               // runs once, after first render
+    fetch("http://localhost:3000/api/students")
+      .then(res => res.json())
+      .then(data => setStudents(data))            // changing state re-renders
+      .catch(err => setError(err.message));
+  }, []);
+
+  if (error) return <p>Could not load: {error}</p>;
+
+  return (
+    <ul>
+      {students.map(s => (
+        <li key={s.id}>{s.name} — BSIT {s.section}</li>
+      ))}
+    </ul>
+  );
+}
+</textarea>
+<ul class="line-notes">
+  <li><b>line 4</b> <code>useState</code> holds the data. Calling <code>setStudents</code> tells React to redraw — no manual <code>render()</code>.</li>
+  <li><b>line 7</b> <code>useEffect(…, [])</code> runs the fetch once when the component first appears.</li>
+  <li><b>line 18</b> The same <code>map</code> from Lesson 3, now producing JSX (HTML-like syntax inside JavaScript).</li>
+</ul>
+
+<h2>7.6 REST or GraphQL?</h2>
+<p>REST is not the only way to connect a front end to a back end. <b>GraphQL</b> (created at Facebook) exposes <b>one</b> endpoint, and the client sends a query describing exactly which fields it wants.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th></th><th>REST</th><th>GraphQL</th></tr></thead>
+  <tbody><tr>
+    <td><b>Request</b></td>
+    <td><textarea class="code" data-lang="text">
+GET /api/students/7
+GET /api/students/7/grades
+</textarea></td>
+    <td><textarea class="code" data-lang="text">
+POST /graphql
+{ student(id: 7) {
+    name
+    grades { subject value }
+} }
+</textarea></td>
+  </tr>
+  <tr><td><b>Endpoints</b></td><td>many (one per resource)</td><td>one</td></tr>
+  <tr><td><b>Data returned</b></td><td>fixed by the server — sometimes too much or too little</td><td>exactly the fields the client asked for</td></tr>
+  <tr><td><b>Strengths</b></td><td>simple, cacheable, every tool supports it</td><td>flexible for complex screens and mobile apps with limited data</td></tr>
+  <tr><td><b>Costs</b></td><td>several requests for related data</td><td>more setup; harder to cache; needs a schema</td></tr>
+  </tbody>
+</table>
+</div>
+
+<details class="think">
+  <summary>A mobile app's home screen needs a user's name, their last 3 orders, and each order's status — nothing else. Data is expensive for its users. Which style fits better, and why?</summary>
+  <div><p>GraphQL fits well: one request can fetch exactly those fields, with no extra data and no chain of follow-up requests. For a small app with simple screens, REST would still be perfectly reasonable — and simpler to build. "It depends on the use case" is the honest answer, as long as you can explain the trade-off.</p></div>
+</details>
+
+<h2>7.7 Debugging integration problems</h2>
+<p>When "it doesn't work," find <i>which tier</i> is failing. On a real computer, check three places: the browser <b>Console</b>, the browser <b>Network</b> tab (Developer Tools, F12), and the <b>terminal</b> where the server runs.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>You see…</th><th>It usually means…</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>TypeError: Failed to fetch</code> and nothing in the server terminal</td><td>The server is not running, or the URL/port is wrong.</td><td>Start the server (<code>node server.js</code>); check the port.</td></tr>
+    <tr><td><code>blocked by CORS policy</code></td><td>Page and API are on different origins, and the API did not allow it.</td><td>Add <code>app.use(cors())</code> on the <b>server</b>, or serve both from one origin.</td></tr>
+    <tr><td><code>404</code> in the Network tab</td><td>No route matches that method + path.</td><td>Compare the URL and method in <code>fetch</code> with the Express route, letter by letter.</td></tr>
+    <tr><td><code>Unexpected token '&lt;' … is not valid JSON</code></td><td>You called <code>res.json()</code>, but the server sent HTML (often a 404 or error page).</td><td>Check <code>res.ok</code> first; fix the URL or the server error.</td></tr>
+    <tr><td><code>req.body</code> is <code>undefined</code></td><td>Missing <code>express.json()</code>, or the request has no <code>Content-Type: application/json</code> header.</td><td>Add both.</td></tr>
+    <tr><td><code>400</code> response</td><td>The server rejected your data on purpose.</td><td>Read the error message in the response body.</td></tr>
+    <tr><td><code>500</code> response</td><td>The server code crashed.</td><td>Read the error in the <b>server terminal</b>.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Summary</h2>
+<ul>
+  <li>Integration loop: event → <code>fetch</code> → route → logic/database → JSON response → re-render.</li>
+  <li>Serve the page from Express (same origin, relative URLs) or run them separately (needs CORS).</li>
+  <li><b>CORS</b> is enforced by the browser and <b>granted by the server</b> with <code>Access-Control-Allow-Origin</code>.</li>
+  <li>The server is the source of truth and must validate everything.</li>
+  <li>React does the same integration with <code>useState</code> + <code>useEffect</code>.</li>
+  <li>REST: many endpoints, fixed shapes. GraphQL: one endpoint, client chooses the fields.</li>
+</ul>
+
+<div class="quiz" data-id="l7" id="quiz">
+  <div class="q" data-answer="1">
+    <p>Which pair of URLs has <b>different origins</b>?</p>
+    <ul><li><code>http://localhost:3000/a</code> and <code>http://localhost:3000/b</code></li><li><code>http://localhost:5500</code> and <code>http://localhost:3000</code></li><li><code>https://psu.edu/x</code> and <code>https://psu.edu/y</code></li><li>Both URLs in option A are the same page.</li></ul>
+    <p class="why">An origin is protocol + host + port. Different ports mean different origins.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>Your page on port 5500 calls your API on port 3000 and gets a CORS error. Where is the correct fix?</p>
+    <ul><li>In the front end: add <code>mode: "cors"</code> to <code>fetch</code>.</li><li>In the browser settings.</li><li>In the HTML <code>&lt;head&gt;</code>.</li><li>In the server: send <code>Access-Control-Allow-Origin</code>, e.g., <code>app.use(cors())</code>.</li></ul>
+    <p class="why">Only the server being called can grant cross-origin access.</p>
+  </div>
+  <div class="q" data-answer="0">
+    <p>The front end already uses a dropdown limited to "2A" and "2B". Why should the server still validate <code>section</code>?</p>
+    <ul><li>Because requests can be sent without your page (e.g., curl or Postman), so the server cannot trust the client.</li><li>Because dropdowns are slow.</li><li>It should not; validating twice is wrong.</li><li>Because JSON cannot store strings.</li></ul>
+    <p class="why">Client-side checks are for convenience. Server-side checks are for correctness and security.</p>
+  </div>
+  <div class="q" data-answer="2">
+    <p>You see <code>SyntaxError: Unexpected token '&lt;'</code> after <code>await res.json()</code>. What is the most likely cause?</p>
+    <ul><li>The JSON has a missing comma in your front-end code.</li><li>The server is not running.</li><li>The server answered with HTML (such as a 404 page) instead of JSON.</li><li>CORS is blocking the request.</li></ul>
+    <p class="why">A <code>&lt;</code> at the start means HTML. Check <code>res.ok</code> and the URL.</p>
+  </div>
+  <div class="q" data-answer="1">
+    <p>If Express serves the front-end files with <code>express.static("public")</code>, how should the page call the API?</p>
+    <ul><li>With a full URL to a different port.</li><li>With a relative URL like <code>fetch("/api/students")</code>, since page and API share one origin.</li><li>It cannot call the API.</li><li>Only with GraphQL.</li></ul>
+    <p class="why">Same server, same origin: relative URLs work and CORS is not needed.</p>
+  </div>
+  <div class="q" data-answer="3">
+    <p>What is a key difference between REST and GraphQL?</p>
+    <ul><li>REST uses JSON; GraphQL cannot.</li><li>GraphQL only works with React.</li><li>REST cannot be used from JavaScript.</li><li>GraphQL uses one endpoint where the client specifies exactly which fields it needs; REST uses many endpoints with server-defined responses.</li></ul>
+    <p class="why">That flexibility is GraphQL's main strength; REST's main strength is simplicity.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
