@@ -97,7 +97,7 @@ export function addStudent() { /* ... */ }
 <h2>6.3 Your first Express server</h2>
 <p><b>Express</b> is the most popular framework for building web servers in Node.js. Here is a complete server. Read the line notes, then press Run.</p>
 
-<div class="play" data-title="Try it · hello server">
+<div class="play" data-file="server.js" data-title="Try it · hello server">
 <textarea>
 const express = require("express");
 const app = express();
@@ -169,7 +169,7 @@ console.log("[client] GET /nope", r3.status, "→", await r3.text());
   <li><b>Query string</b> — after <code>?</code>, for filtering or options: <code>/api/students?<b>section=2A</b></code> → <code>req.query.section</code></li>
 </ul>
 
-<div class="play" data-title="Try it · params and query">
+<div class="play" data-file="server.js" data-title="Try it · params and query">
 <textarea>
 const express = require("express");
 const app = express();
@@ -222,7 +222,7 @@ await show("http://localhost:3000/api/students/99");
 
 <p>The server must also <b>validate</b> the data. Never trust what a client sends: it may be missing fields, have the wrong type, or be deliberately harmful.</p>
 
-<div class="play" data-title="Try it · POST with validation">
+<div class="play" data-file="server.js" data-title="Try it · POST with validation">
 <textarea>
 const express = require("express");
 const app = express();
@@ -268,7 +268,7 @@ await addStudent({ name: "Ben" });            // missing section
 <h2>6.7 A complete CRUD API</h2>
 <p>Here is everything together — list, read, create, update and delete — in about 50 lines. The data lives in an array, so it disappears when the server restarts. In Lesson 8 you will see how to store it in a real database instead.</p>
 
-<div class="play" data-title="Try it · full CRUD API">
+<div class="play" data-file="task-api.js" data-title="Try it · full CRUD API">
 <textarea>
 const express = require("express");
 const app = express();
@@ -335,7 +335,7 @@ console.table(await r.json());
 <h2>6.8 Middleware: code that runs between request and route</h2>
 <p><b>Middleware</b> is a function that sees every request <i>before</i> it reaches a route. It can log, check a login token, parse the body, or reject the request. It receives a third argument, <code>next</code>; calling <code>next()</code> passes the request along the line. <code>express.json()</code> is middleware, and so is <code>cors()</code>, which you will meet in Lesson 7. (This is the "middleware" in Outline Week 7.)</p>
 
-<div class="play" data-title="Try it · logging and a simple API key check">
+<div class="play" data-file="middleware.js" data-title="Try it · logging and a simple API key check">
 <textarea>
 const express = require("express");
 const app = express();

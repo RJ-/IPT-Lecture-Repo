@@ -51,7 +51,7 @@
 <h2>1.2 Your first line: <code>console.log()</code></h2>
 <p>In C++ you print with <code>cout</code>; in Java with <code>System.out.println()</code>. In JavaScript you use <code>console.log()</code>. Press <b>▶ Run</b> below.</p>
 
-<div class="play" data-title="Try it · Hello, Partido">
+<div class="play" data-file="hello.js" data-title="Try it · Hello, Partido">
 <textarea>
 // This is a comment. JavaScript ignores it.
 console.log("Hello, Partido State University!");
@@ -91,7 +91,7 @@ console.log("Done.");
 </table>
 </div>
 
-<div class="play" data-title="Try it · let vs const">
+<div class="play" data-file="variables.js" data-title="Try it · let vs const">
 <textarea>
 const school = "Partido State University";
 let enrolled = 40;
@@ -130,7 +130,7 @@ console.log("Now:", enrolled);
 </table>
 </div>
 
-<div class="play" data-title="Try it · typeof">
+<div class="play" data-file="types.js" data-title="Try it · typeof">
 <textarea>
 let thing = 19;
 console.log(thing, "is a", typeof thing);
@@ -160,7 +160,7 @@ console.log(0.1 + 0.2);   // surprise! (same in Java's double)
 <h3>The <code>+</code> trap: numbers vs strings</h3>
 <p>When <code>+</code> sees a string on either side, it <b>joins</b> instead of adds. This matters a lot when data comes from a form or a web request, because that data usually arrives as text.</p>
 
-<div class="play" data-title="Try it · + joins or adds?">
+<div class="play" data-file="operators.js" data-title="Try it · + joins or adds?">
 <textarea>
 console.log(7 / 2);          // 3.5
 console.log(7 % 2);          // 1  (remainder)
@@ -179,7 +179,7 @@ console.log(Number(fromForm) + 10);  // convert first
 <h3>Comparison: always use <code>===</code></h3>
 <p>JavaScript has two equality operators. <code>==</code> ("loose") converts types before comparing, which produces strange results. <code>===</code> ("strict") checks that both the value <i>and</i> the type match. <b>Use <code>===</code> and <code>!==</code> every time.</b></p>
 
-<div class="play" data-title="Try it · == vs ===">
+<div class="play" data-file="equality.js" data-title="Try it · == vs ===">
 <textarea>
 console.log(5 == "5");     // true   (loose: converts "5" to 5)
 console.log(5 === "5");    // false  (strict: number vs string)
@@ -210,7 +210,7 @@ console.log(!hasCompleteAttendance);                // false
 <h2>1.6 Strings and template literals</h2>
 <p>Joining strings with <code>+</code> gets messy fast. Modern JavaScript has <b>template literals</b>: use backticks <code>`…`</code> (the key above Tab) and put any expression inside <code>${ }</code>.</p>
 
-<div class="play" data-title="Try it · template literals">
+<div class="play" data-file="strings.js" data-title="Try it · template literals">
 <textarea>
 const name = "Juan";
 const section = "BSIT 2A";

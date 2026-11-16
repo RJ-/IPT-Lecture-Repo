@@ -118,59 +118,146 @@
     return [sep("┌", "┬", "┐"), line(header), sep("├", "┼", "┤")].concat(body.map(line), [sep("└", "┴", "┘")]).join("\n");
   }
 
-  /* ---------- Syntax highlighting ---------- */
-  const JS_KW = "const|let|var|function|return|if|else|for|while|do|of|in|new|class|extends|async|await|try|catch|finally|throw|import|from|export|default|true|false|null|undefined|this|typeof|switch|case|break|continue|require|module";
+  /* ---------- Syntax highlighting (VS Code Dark+ style tokens) ---------- */
+  const KW_STORAGE = "const|let|var|function|class|extends|new|this|typeof|instanceof|async|of|in|void|delete|static|get|set";
+  const KW_CONTROL = "return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|import|from|export|default|await|yield";
+  const KW_CONST = "true|false|null|undefined|NaN|Infinity";
   const JS_RE = new RegExp(
-    "(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)" +                          // 1 comment
-    "|(`(?:\\\\[\\s\\S]|[^`\\\\])*`|'(?:\\\\.|[^'\\\\\\n])*'|\"(?:\\\\.|[^\"\\\\\\n])*\")" + // 2 string
-    "|\\b(" + JS_KW + ")\\b" +                                           // 3 keyword
-    "|\\b(\\d+(?:\\.\\d+)?)\\b", "g");                                   // 4 number
+    "(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)" +                                                  // 1 comment
+    "|(`(?:\\\\[\\s\\S]|[^`\\\\])*`|'(?:\\\\.|[^'\\\\\\n])*'|\"(?:\\\\.|[^\"\\\\\\n])*\")" +      // 2 string
+    "|\\b(" + KW_CONTROL + ")\\b" +                                                            // 3 control keyword
+    "|\\b(" + KW_STORAGE + ")\\b" +                                                            // 4 storage keyword
+    "|\\b(" + KW_CONST + ")\\b" +                                                              // 5 constant
+    "|\\b(\\d+(?:\\.\\d+)?)\\b" +                                                              // 6 number
+    "|([A-Za-z_$][\\w$]*)(?=\\s*\\()" +                                                        // 7 function call/def
+    "|\\.([A-Za-z_$][\\w$]*)(?![\\w$]|\\s*\\()" +                                                    // 8 .property
+    "|\\b([A-Z][\\w$]*)\\b",                                                                   // 9 Class / global
+    "g");
+  const JS_CLS = [null, "com", "str", "ctl", "kw", "con", "num", "fn", "prop", "type"];
 
-  function hlJS(src) {
-    let out = "", last = 0, m;
-    JS_RE.lastIndex = 0;
-    while ((m = JS_RE.exec(src))) {
-      out += esc(src.slice(last, m.index));
-      const cls = m[1] ? "com" : m[2] ? "str" : m[3] ? "kw" : "num";
-      out += '<span class="tk-' + cls + '">' + esc(m[0]) + "</span>";
-      last = JS_RE.lastIndex;
-    }
-    return out + esc(src.slice(last));
-  }
-  function hlHTML(src) {
-    // split out <script>…</script> bodies and highlight them as JS
-    let out = "", last = 0;
-    const re = /(<script\b[^>]*>)([\s\S]*?)(<\/script>)/gi;
-    let m;
+  function tokJS(src, out) {
+    let last = 0, m;
+    const re = new RegExp(JS_RE.source, "g");   // local copy: tokJS can re-enter for ${ }
     while ((m = re.exec(src))) {
-      out += hlTags(src.slice(last, m.index)) + hlTags(m[1]) + hlJS(m[2]) + hlTags(m[3]);
-      last = re.lastIndex;
-    }
-    return out + hlTags(src.slice(last));
-  }
-  function hlTags(s) {
-    let out = "", last = 0, m;
-    const re = /(<!--[\s\S]*?-->)|(<\/?[a-zA-Z][\w-]*)((?:\s+[\w:-]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?>)/g;
-    while ((m = re.exec(s))) {
-      out += esc(s.slice(last, m.index));
-      if (m[1]) out += '<span class="tk-com">' + esc(m[1]) + "</span>";
-      else {
-        const attrs = m[3].replace(/([\w:-]+)(=)?("[^"]*"|'[^']*'|[^\s>]+)?/g, function (_, n, eq, val) {
-          return '<span class="tk-attr">' + esc(n) + "</span>" + (eq ? "=" : "") + (val ? '<span class="tk-str">' + esc(val) + "</span>" : "");
-        });
-        out += '<span class="tk-tag">' + esc(m[2]) + "</span>" + attrs + '<span class="tk-tag">' + esc(m[4]) + "</span>";
+      if (m.index > last) out.push([null, src.slice(last, m.index)]);
+      let cls = null;
+      for (let g = 1; g < JS_CLS.length; g++) if (m[g] !== undefined) { cls = JS_CLS[g]; break; }
+      // template literal: highlight ${ } placeholders inside
+      if (cls === "str" && m[0][0] === "`" && m[0].indexOf("${") !== -1) {
+        const s = m[0];
+        let i = 0, buf = "";
+        while (i < s.length) {
+          if (s[i] === "$" && s[i + 1] === "{") {
+            if (buf) out.push(["str", buf]); buf = "";
+            let depth = 1, j = i + 2;
+            while (j < s.length && depth) { if (s[j] === "{") depth++; else if (s[j] === "}") depth--; j++; }
+            out.push(["punc", "${"]);
+            tokJS(s.slice(i + 2, j - 1), out);
+            out.push(["punc", "}"]);
+            i = j;
+          } else { buf += s[i++]; }
+        }
+        if (buf) out.push(["str", buf]);
+      } else if (cls === "prop") {
+        out.push([null, "."]); out.push(["prop", m[8]]);
+      } else {
+        out.push([cls, m[0]]);
       }
       last = re.lastIndex;
     }
-    return out + esc(s.slice(last));
+    if (last < src.length) out.push([null, src.slice(last)]);
+    return out;
   }
-  function hlPlain(src) {
-    return esc(src).replace(/(^|\n)(\s*#[^\n]*)/g, '$1<span class="tk-com">$2</span>');
+
+  function tokTags(s, out) {
+    let last = 0, m;
+    const re = /(<!--[\s\S]*?-->)|(<\/?)([a-zA-Z][\w-]*)((?:\s+[\w:-]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?>)/g;
+    while ((m = re.exec(s))) {
+      if (m.index > last) out.push([null, s.slice(last, m.index)]);
+      if (m[1]) out.push(["com", m[1]]);
+      else {
+        out.push(["tagp", m[2]]); out.push(["tag", m[3]]);
+        const ar = /(\s+)([\w:-]+)(?:(\s*=\s*)("[^"]*"|'[^']*'|[^\s>]+))?/g;
+        let a;
+        while ((a = ar.exec(m[4]))) {
+          out.push([null, a[1]]); out.push(["attr", a[2]]);
+          if (a[3]) { out.push([null, a[3]]); out.push(["str", a[4]]); }
+        }
+        out.push(["tagp", m[5]]);
+      }
+      last = re.lastIndex;
+    }
+    if (last < s.length) out.push([null, s.slice(last)]);
+    return out;
   }
-  function highlight(src, lang) {
-    if (lang === "html") return hlHTML(src);
-    if (lang === "bash" || lang === "yaml" || lang === "text") return hlPlain(src);
-    return hlJS(src);
+  function tokHTML(src) {
+    const out = [];
+    let last = 0, m;
+    const re = /(<(script|style)\b[^>]*>)([\s\S]*?)(<\/\2>)/gi;
+    while ((m = re.exec(src))) {
+      tokTags(src.slice(last, m.index), out);
+      tokTags(m[1], out);
+      if (m[2].toLowerCase() === "script") tokJS(m[3], out);
+      else tokCSS(m[3], out);
+      tokTags(m[4], out);
+      last = re.lastIndex;
+    }
+    tokTags(src.slice(last), out);
+    return out;
+  }
+  function tokCSS(s, out) {
+    let last = 0, m;
+    const re = /(\/\*[\s\S]*?\*\/)|([\w-]+)(?=\s*:[^;{}]*[;}])|(#[0-9a-fA-F]{3,8}\b|\b\d+(?:\.\d+)?(?:px|rem|em|%|s)?\b)|([^{}\s][^{}]*?)(?=\s*\{)/g;
+    while ((m = re.exec(s))) {
+      if (m.index > last) out.push([null, s.slice(last, m.index)]);
+      out.push([m[1] ? "com" : m[2] ? "prop" : m[3] ? "num" : "fn", m[0]]);
+      last = re.lastIndex;
+    }
+    if (last < s.length) out.push([null, s.slice(last)]);
+    return out;
+  }
+  function tokPlain(src, lang) {
+    const out = [];
+    src.split(/(\n)/).forEach(function (part) {
+      if (part === "\n") out.push([null, part]);
+      else if (/^\s*#/.test(part)) out.push(["com", part]);
+      else if (lang === "yaml") {
+        const m = part.match(/^(\s*-?\s*)([\w.-]+)(:)(.*)$/);
+        if (m) { out.push([null, m[1]]); out.push(["prop", m[2]]); out.push([null, m[3]]);
+          const v = m[4].replace(/(\s+#.*)$/, ""); const c = m[4].slice(v.length);
+          out.push(["str", v]); if (c) out.push(["com", c]); }
+        else out.push([null, part]);
+      } else if (lang === "bash") {
+        const m = part.match(/^(\s*)(\S+)(.*?)(\s+#.*)?$/);
+        if (m) { out.push([null, m[1]]); out.push(["fn", m[2]]); out.push([null, m[3]]); if (m[4]) out.push(["com", m[4]]); }
+        else out.push([null, part]);
+      } else out.push([null, part]);
+    });
+    return out;
+  }
+  function tokenize(src, lang) {
+    if (lang === "html") return tokHTML(src);
+    if (lang === "bash" || lang === "yaml" || lang === "text") return tokPlain(src, lang);
+    return tokJS(src, []);
+  }
+
+  // Render tokens as one <span class="ide-line"> per line (so numbers align even when lines wrap)
+  function renderLines(src, lang, activeLine) {
+    const toks = tokenize(src, lang);
+    const lines = [[]];
+    toks.forEach(function (t) {
+      const parts = t[1].split("\n");
+      parts.forEach(function (p, i) {
+        if (i > 0) lines.push([]);
+        if (p) lines[lines.length - 1].push(t[0] ? '<span class="tk-' + t[0] + '">' + esc(p) + "</span>" : esc(p));
+      });
+    });
+    return lines.map(function (l, i) {
+      return '<span class="ide-line' + (i === activeLine ? " active" : "") + '">' + (l.join("") || "​") + "</span>";
+    }).join("");
+  }
+  function highlight(src, lang) {   // kept for any inline use
+    return renderLines(src, lang, -1);
   }
   function dedent(s) {
     s = s.replace(/^\n+/, "").replace(/\s+$/, "");
@@ -180,15 +267,40 @@
     return lines.map(function (l) { return l.slice(ind); }).join("\n");
   }
 
+  const LANG_NAME = { js: "JavaScript", html: "HTML", bash: "Shell", yaml: "YAML", text: "Plain Text", json: "JSON" };
+  const DEFAULT_FILE = { js: "script.js", html: "index.html", yaml: "config.yml", json: "data.json" };
+  function fileIcon(name, lang) {
+    const ext = (name.match(/\.(\w+)$/) || [])[1] || lang;
+    const map = { js: ["JS", "#f1e05a"], jsx: ["JSX", "#61dafb"], json: ["{}", "#cbcb41"], html: ["<>", "#e44d26"],
+      yml: ["Y", "#cb171e"], yaml: ["Y", "#cb171e"], md: ["M", "#519aba"], env: ["$", "#e5c07b"] };
+    const v = map[ext] || ["≡", "#9da5b4"];
+    return '<span class="ide-ficon" style="color:' + v[1] + '">' + esc(v[0]) + "</span>";
+  }
+  function splitFileLabel(label) {
+    const m = String(label).match(/^(.*?)\s*\((.*)\)\s*$/);
+    return m ? { name: m[1], note: m[2] } : { name: label, note: "" };
+  }
+  function titleBar(fileLabel, lang, extraRight) {
+    const f = splitFileLabel(fileLabel);
+    const term = lang === "bash";
+    return '<div class="ide-titlebar"><span class="ide-dots"><i></i><i></i><i></i></span>' +
+      '<span class="ide-tab">' + (term ? '<span class="ide-ficon" style="color:#89d185">❯_</span>' : fileIcon(f.name, lang)) +
+      esc(term && !fileLabel ? "Terminal" : f.name) + "</span>" +
+      (f.note ? '<span class="ide-note">' + esc(f.note) + "</span>" : "") +
+      '<span class="ide-spacer"></span>' + (extraRight || "") + "</div>";
+  }
+
   /* ---------- Static code blocks: <textarea class="code" data-lang data-file> ---------- */
   function renderStaticCode(root) {
     root.querySelectorAll("textarea.code").forEach(function (ta) {
       const lang = ta.getAttribute("data-lang") || "js";
-      const pre = el("pre", { class: "code" });
-      if (ta.dataset.file) pre.setAttribute("data-file", ta.dataset.file);
-      const code = el("code", null, highlight(dedent(ta.value), lang));
-      pre.appendChild(code);
-      ta.replaceWith(pre);
+      const src = dedent(ta.value);
+      const numbered = !(lang === "text" || lang === "bash") && ta.dataset.lines !== "off";
+      const label = ta.dataset.file || (lang === "bash" ? "" : DEFAULT_FILE[lang] || "");
+      const win = el("div", { class: "ide ide-static" + (lang === "bash" ? " ide-terminal" : "") });
+      win.innerHTML = (label || lang === "bash" ? titleBar(label, lang, '<span class="ide-ro">read-only</span>') : "") +
+        '<pre class="ide-pre' + (numbered ? " numbered" : "") + '"><code>' + renderLines(src, lang, -1) + "</code></pre>";
+      ta.replaceWith(win);
     });
   }
 
@@ -223,47 +335,106 @@
     const ta = box.querySelector("textarea");
     if (!ta) return;
     const mode = box.dataset.mode || "js";
-    const original = dedent(ta.value);
+    const lang = mode === "html" ? "html" : "js";
+    const original = dedent(ta.value) + (box.dataset.blank === "on" ? "\n" : "");
     const title = box.dataset.title || (mode === "html" ? "Try it · web page" : "Try it");
     const sub = box.dataset.sub || (mode === "html" ? "edit the HTML/JS, then Run" : "edit the code, then Run");
-
-    const head = el("div", { class: "play-head" },
-      '<span class="label">' + esc(title) + "<small>" + esc(sub) + "</small></span>");
-    const run = el("button", { class: "play-btn run", type: "button" }, "▶ Run");
-    const reset = el("button", { class: "play-btn reset", type: "button" }, "Reset");
-    head.appendChild(run); head.appendChild(reset);
-
-    const editor = el("textarea", {
-      class: "play-editor", spellcheck: "false", autocapitalize: "off",
-      autocomplete: "off", autocorrect: "off", "aria-label": "Code editor"
-    });
-    editor.value = original;
-    const out = el("pre", { class: "play-output", "aria-live": "polite" });
-    let frame = null;
+    const fileLabel = box.dataset.file || DEFAULT_FILE[lang];
 
     box.innerHTML = "";
-    box.appendChild(head); box.appendChild(editor);
-    if (mode === "html") {
-      frame = el("iframe", { sandbox: "allow-scripts allow-modals allow-forms", title: "Result" });
-      box.appendChild(frame);
-    }
-    box.appendChild(out);
+    box.appendChild(el("div", { class: "play-caption" },
+      "<b>" + esc(title) + "</b><span>" + esc(sub) + "</span>"));
 
-    function fit() {
-      editor.style.height = "auto";
-      editor.style.height = Math.min(Math.max(editor.scrollHeight + 4, 110), 560) + "px";
+    const win = el("div", { class: "ide" });
+    win.innerHTML = titleBar(fileLabel, lang, "");
+    const tb = win.querySelector(".ide-titlebar");
+    const run = el("button", { class: "play-btn run", type: "button", title: "Run (Ctrl+Enter)" }, "▶ Run");
+    const reset = el("button", { class: "play-btn reset", type: "button", title: "Restore the original code" }, "↺ Reset");
+    tb.appendChild(reset); tb.appendChild(run);
+
+    const wrap = el("div", { class: "ide-editor" });
+    const hl = el("pre", { class: "ide-pre numbered", "aria-hidden": "true" });
+    const hlCode = el("code");
+    hl.appendChild(hlCode);
+    const editor = el("textarea", {
+      class: "ide-input", spellcheck: "false", autocapitalize: "off",
+      autocomplete: "off", autocorrect: "off", wrap: "soft", "aria-label": "Code editor: " + title
+    });
+    editor.value = original;
+    wrap.appendChild(hl); wrap.appendChild(editor);
+    win.appendChild(wrap);
+
+    let frame = null;
+    if (mode === "html") {
+      win.appendChild(el("div", { class: "ide-panel-head" },
+        '<span class="on">Preview</span><span class="ide-addr">' +
+        (box.dataset.server === "on" ? "http://localhost:5500" : "browser") + "</span>"));
+      frame = el("iframe", { sandbox: "allow-scripts allow-modals allow-forms", title: "Result of " + title });
+      win.appendChild(frame);
     }
-    setTimeout(fit, 0);
-    editor.addEventListener("input", fit);
-    editor.addEventListener("keydown", function (e) {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        const s = editor.selectionStart, en = editor.selectionEnd;
-        editor.value = editor.value.slice(0, s) + "  " + editor.value.slice(en);
-        editor.selectionStart = editor.selectionEnd = s + 2;
-      } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        e.preventDefault(); run.click();
+    win.appendChild(el("div", { class: "ide-panel-head" },
+      '<span class="on">Console</span><span class="ide-kbd">Ctrl + Enter to run</span>'));
+    const out = el("pre", { class: "play-output", "aria-live": "polite" });
+    win.appendChild(out);
+
+    const status = el("div", { class: "ide-status" });
+    status.innerHTML = '<span class="st-state">● Ready</span><span class="ide-spacer"></span>' +
+      '<span class="st-pos">Ln 1, Col 1</span><span class="st-hide">Spaces: 2</span><span class="st-hide">UTF-8</span><span>' +
+      LANG_NAME[lang] + "</span>";
+    win.appendChild(status);
+    box.appendChild(win);
+    const stState = status.querySelector(".st-state");
+    const stPos = status.querySelector(".st-pos");
+
+    // Re-draw the highlighted copy under the transparent textarea
+    let lastSrc = null, lastLine = -2;
+    function fit() {
+      const v = editor.value;
+      const before = v.slice(0, editor.selectionStart);
+      const line = (before.match(/\n/g) || []).length;
+      const col = before.length - before.lastIndexOf("\n");
+      const focused = document.activeElement === editor;
+      const active = focused ? line : -1;
+      if (v !== lastSrc || active !== lastLine) {
+        hlCode.innerHTML = renderLines(v, lang, active);
+        lastSrc = v; lastLine = active;
       }
+      stPos.textContent = "Ln " + (line + 1) + ", Col " + col;
+    }
+    fit();
+    ["input", "keyup", "click", "focus", "blur", "select"].forEach(function (ev) { editor.addEventListener(ev, fit); });
+
+    function insert(text) {
+      editor.focus();
+      let ok = false;
+      try { ok = document.execCommand && document.execCommand("insertText", false, text); } catch (e) { ok = false; }
+      if (!ok) {
+        editor.setRangeText(text, editor.selectionStart, editor.selectionEnd, "end");
+        fit();
+      }
+    }
+    editor.addEventListener("keydown", function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault(); run.click();
+      } else if (e.key === "Tab" && !e.shiftKey) {
+        e.preventDefault(); insert("  ");
+      } else if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+        // auto-indent: keep this line's indentation, add a level after { [ (
+        const s = editor.selectionStart;
+        const lineStart = editor.value.lastIndexOf("\n", s - 1) + 1;
+        const cur = editor.value.slice(lineStart, s);
+        let indent = cur.match(/^\s*/)[0];
+        if (/[{[(]\s*$/.test(cur)) indent += "  ";
+        e.preventDefault(); insert("\n" + indent);
+      }
+    });
+    run.addEventListener("click", function () {
+      stState.textContent = "✓ Ran at " + new Date().toLocaleTimeString();
+      status.classList.remove("dirty");
+    });
+    editor.addEventListener("input", function () {
+      stState.textContent = editor.value === original ? "● Ready" : "● Edited";
+      status.classList.toggle("dirty", editor.value !== original);
     });
 
     function print(args, kind) {
@@ -363,6 +534,7 @@
     reset.addEventListener("click", function () {
       timers.clearAll();
       editor.value = original; fit();
+      stState.textContent = "● Ready"; status.classList.remove("dirty");
       out.innerHTML = "";
       if (frame) frame.srcdoc = "";
     });

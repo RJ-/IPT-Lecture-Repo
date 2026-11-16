@@ -37,7 +37,7 @@
 
 <h2>2.1 Making decisions with <code>if</code></h2>
 
-<div class="play" data-title="Try it · grade remarks">
+<div class="play" data-file="grades.js" data-title="Try it · grade remarks">
 <textarea>
 const grade = 82;
 
@@ -62,7 +62,7 @@ console.log(`Grade ${grade}: ${remark}`);
 <p style="text-align:center"><code>false</code> &nbsp; <code>0</code> &nbsp; <code>""</code> (empty string) &nbsp; <code>null</code> &nbsp; <code>undefined</code> &nbsp; <code>NaN</code></p>
 <p>Everything else is <b>truthy</b> — including <code>"0"</code>, <code>"false"</code>, <code>[]</code> and <code>{}</code>.</p>
 
-<div class="play" data-title="Try it · checking a form field">
+<div class="play" data-file="truthy.js" data-title="Try it · checking a form field">
 <textarea>
 let username = "";   // the user left the box empty
 
@@ -104,7 +104,7 @@ switch (day) {
 <h2>2.2 Loops</h2>
 <p>The classic <code>for</code> and <code>while</code> loops are the same as in C++ — just use <code>let</code> instead of <code>int</code>.</p>
 
-<div class="play" data-title="Try it · three kinds of loop">
+<div class="play" data-file="loops.js" data-title="Try it · three kinds of loop">
 <textarea>
 // 1. Classic for loop — when you need a counter
 for (let i = 1; i <= 3; i++) {
@@ -144,7 +144,7 @@ console.log(`Reached ₱${savings} after ${weeks} weeks.`);
   <p>Write a loop that prints the multiplication table of 7 from <code>7 x 1 = 7</code> to <code>7 x 10 = 70</code>. Use the empty box below.</p>
 </div>
 
-<div class="play" data-title="Your code · multiplication table">
+<div class="play" data-file="my-loop.js" data-blank="on" data-title="Your code · multiplication table">
 <textarea>
 // Write your loop here, then press Run.
 
@@ -166,7 +166,7 @@ for (let i = 1; i <= 10; i++) {
 <p>A function is a named, reusable set of steps. You give it inputs (<b>parameters</b>), it does work, and it can hand back an output with <b><code>return</code></b>. Unlike Java, you do not declare the types of the parameters or of the return value.</p>
 
 <h3>Three ways to write the same function</h3>
-<div class="play" data-title="Try it · function styles">
+<div class="play" data-file="functions.js" data-title="Try it · function styles">
 <textarea>
 // 1. Function declaration
 function computeAverage(a, b, c) {
@@ -195,7 +195,7 @@ console.log(computeAverage3(85, 90, 78));
 
 <h3>Arrow functions with a body</h3>
 <p>If you need more than one line, add braces — and then you <i>must</i> write <code>return</code>.</p>
-<div class="play" data-title="Try it · arrows, defaults and return">
+<div class="play" data-file="arrows.js" data-title="Try it · arrows, defaults and return">
 <textarea>
 const toRemark = (grade, passing = 75) => {
   if (grade >= passing) {
@@ -237,7 +237,7 @@ console.log(message);    // ReferenceError: message is not defined
 <h2>2.4 Functions as values (the functional style)</h2>
 <p>Here is where JavaScript really differs from older Java. Since a function is a value, you can <b>pass a function into another function</b>. The function you pass in is called a <b>callback</b>. This one idea powers button clicks (Lesson 4), waiting for data (Lesson 5), and server routes (Lesson 6).</p>
 
-<div class="play" data-title="Try it · callbacks">
+<div class="play" data-file="callbacks.js" data-title="Try it · callbacks">
 <textarea>
 // applyToAll takes a list AND a function, and uses the function on each item
 function applyToAll(list, action) {

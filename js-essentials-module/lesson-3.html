@@ -32,7 +32,7 @@
 <h2>3.1 Arrays: ordered lists</h2>
 <p>An array holds many values in order. Unlike a Java array, a JavaScript array can <b>grow and shrink</b> (it behaves more like Java's <code>ArrayList</code>), and it can even mix types.</p>
 
-<div class="play" data-title="Try it · array basics">
+<div class="play" data-file="arrays.js" data-title="Try it · array basics">
 <textarea>
 const scores = [85, 92, 78];
 
@@ -59,7 +59,7 @@ console.log(scores.join(" | "));    // "85 | 92 | 78"
 <h2>3.2 Objects: one record with named fields</h2>
 <p>An object groups related values under <b>property names</b> (also called keys). In Java you would write a whole class for this; in JavaScript you can just write the object directly with curly braces.</p>
 
-<div class="play" data-title="Try it · object basics">
+<div class="play" data-file="objects.js" data-title="Try it · object basics">
 <textarea>
 const student = {
   id: 2401,
@@ -104,7 +104,7 @@ console.log(counter.count);   // 2
 <p>JavaScript also has <code>class</code> syntax that will feel familiar from Java (<code>class Student { constructor(name) { this.name = name; } }</code>). We will not need it in this module, but you will see it in frameworks.</p>
 
 <h3>Destructuring and spread (you will see these in every framework)</h3>
-<div class="play" data-title="Try it · destructuring and spread">
+<div class="play" data-file="spread.js" data-title="Try it · destructuring and spread">
 <textarea>
 const student = { name: "Leo", section: "BSIT 2B", year: 2 };
 
@@ -153,7 +153,7 @@ const students = [
 </table>
 </div>
 
-<div class="play" data-title="Try it · map, filter, find, reduce">
+<div class="play" data-file="students.js" data-title="Try it · map, filter, find, reduce">
 <textarea>
 const students = [
   { id: 1, name: "Ana",   section: "2A", grade: 91 },
@@ -246,7 +246,7 @@ for (const s of students) {
   <div class="node"><b>Any language</b>Python, Java, PHP…</div>
 </div>
 
-<div class="play" data-title="Try it · stringify and parse">
+<div class="play" data-file="json.js" data-title="Try it · stringify and parse">
 <textarea>
 const student = { id: 1, name: "Ana", grade: 91, passed: true };
 

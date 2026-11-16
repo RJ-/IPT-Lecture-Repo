@@ -46,7 +46,7 @@
 <h2>5.2 Seeing it happen: <code>setTimeout</code></h2>
 <p><code>setTimeout(callback, ms)</code> runs a function after a delay. Before you press Run, <b>predict</b> the order of the four lines.</p>
 
-<div class="play" data-title="Try it · predict the order">
+<div class="play" data-file="event-loop.js" data-title="Try it · predict the order">
 <textarea>
 console.log("1. Take order");
 
@@ -93,7 +93,7 @@ getStudent(2401, (student) => {
 </div>
 <p>You attach <code>.then(callback)</code> for success and <code>.catch(callback)</code> for failure. Below, <code>getGrade</code> pretends to be a slow server.</p>
 
-<div class="play" data-title="Try it · a promise">
+<div class="play" data-file="promise.js" data-title="Try it · a promise">
 <textarea>
 // A fake "slow server" that returns a Promise
 function getGrade(studentId) {
@@ -127,7 +127,7 @@ console.log("...and the page is not frozen while we wait.");
 <h2>5.5 <code>async</code> / <code>await</code>: asynchronous code that reads like normal code</h2>
 <p>Inside a function marked <code>async</code>, you can write <code>await</code> in front of a Promise. JavaScript pauses <i>that function</i> until the Promise settles, then gives you the value — while the rest of the page keeps running. Errors are handled with ordinary <code>try / catch</code>, just like Java.</p>
 
-<div class="play" data-title="Try it · async/await">
+<div class="play" data-file="async-await.js" data-title="Try it · async/await">
 <textarea>
 function getGrade(studentId) {
   return new Promise((resolve, reject) => {
@@ -210,7 +210,7 @@ async function buildReport(id) {
 
 <p>The box below calls <b>JSONPlaceholder</b>, a free practice API with fake data. You need an internet connection for this one.</p>
 
-<div class="play" data-title="Try it · fetch real data" data-sub="needs internet">
+<div class="play" data-file="fetch-users.js" data-title="Try it · fetch real data" data-sub="needs internet">
 <textarea>
 async function loadUsers() {
   try {
@@ -294,7 +294,7 @@ await loadUsers();
 <h3>Sending data: POST with a JSON body</h3>
 <p><code>fetch</code> sends a GET by default. To <b>create</b> something, send a POST with the data as JSON. Look closely — you will write exactly this in Lesson 7.</p>
 
-<div class="play" data-title="Try it · POST" data-sub="needs internet">
+<div class="play" data-file="fetch-post.js" data-title="Try it · POST" data-sub="needs internet">
 <textarea>
 const newPost = { title: "IPT1 Module", body: "Learning fetch!", userId: 1 };
 
@@ -318,7 +318,7 @@ console.log("Server answered:", saved);     // now it has an id
 
 <h2>5.7 Doing several things at once: <code>Promise.all</code></h2>
 <p>If two requests do not depend on each other, do not wait for one before starting the other. Start both, then wait for <b>all</b> of them.</p>
-<div class="play" data-title="Try it · one by one vs together">
+<div class="play" data-file="promise-all.js" data-title="Try it · one by one vs together">
 <textarea>
 const wait = (ms, value) => new Promise(res => setTimeout(() => res(value), ms));
 

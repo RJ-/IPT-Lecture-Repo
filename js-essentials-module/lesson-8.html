@@ -80,7 +80,7 @@ function send(text) {
 <h2>8.2 Databases: SQL and NoSQL <small style="font-weight:400;color:var(--ink-faint)">· Week 8</small></h2>
 <p>In Lessons 6–7, data lived in an array and vanished on restart. In a real system, routes read and write a <b>database</b>. Node.js has drivers for every major database. Notice that the route looks the same — only the line that touches the data changes, and it now uses <code>await</code>, because a database is slow, just like the network.</p>
 
-<textarea class="code" data-lang="js" data-file="SQL — MySQL with the 'mysql2' package">
+<textarea class="code" data-lang="js" data-file="db-mysql.js (SQL — MySQL with the mysql2 package)">
 const mysql = require("mysql2/promise");
 const db = mysql.createPool({
   host: process.env.DB_HOST, user: process.env.DB_USER,
@@ -96,7 +96,7 @@ app.get("/api/students/:id", async (req, res) => {
 });
 </textarea>
 
-<textarea class="code" data-lang="js" data-file="NoSQL — MongoDB with the official 'mongodb' package">
+<textarea class="code" data-lang="js" data-file="db-mongo.js (NoSQL — MongoDB with the official driver)">
 const { MongoClient } = require("mongodb");
 const client = new MongoClient(process.env.MONGO_URL);
 const students = client.db("school").collection("students");
@@ -121,7 +121,7 @@ app.post("/api/students", async (req, res) => {
 <h2>8.3 Microservices: services calling services <small style="font-weight:400;color:var(--ink-faint)">· Weeks 6 &amp; 16</small></h2>
 <p>A <b>microservices</b> architecture splits one big back end into small services, each owning one job and its own data. They talk to each other over HTTP — using exactly the <code>fetch</code> you learned in Lesson 5, but now from one <i>server</i> to another. Run this: two services on two ports.</p>
 
-<div class="play" data-title="Try it · two microservices" data-sub="simulated">
+<div class="play" data-file="microservices.js" data-title="Try it · two microservices" data-sub="simulated">
 <textarea>
 const express = require("express");
 
@@ -196,7 +196,7 @@ export default function StudentsScreen() {
 <h2>8.5 Serverless functions: AWS Lambda <small style="font-weight:400;color:var(--ink-faint)">· Weeks 10 &amp; 17</small></h2>
 <p>With <b>serverless</b> computing you do not run a server at all. You upload a single function; the cloud provider runs it only when a request arrives, scales it automatically, and charges per use. On AWS Lambda a Node.js function is just an exported async function that receives an <b>event</b> object and returns a response object.</p>
 
-<div class="play" data-title="Try it · a Lambda-style handler" data-sub="we call it with a fake event">
+<div class="play" data-file="index.mjs (AWS Lambda handler)" data-title="Try it · a Lambda-style handler" data-sub="we call it with a fake event">
 <textarea>
 // ---- index.js as you would upload it to AWS Lambda ----
 const handler = async (event) => {
@@ -223,7 +223,7 @@ console.log(await handler({ queryStringParameters: null }));
 <p><b>WebAssembly</b> (Wasm) is a compact binary format that browsers can run at near-native speed. Code written in C, C++ or Rust can be compiled to <code>.wasm</code>, then JavaScript loads it and calls its functions. JavaScript stays in charge of the page; Wasm does the heavy number-crunching (image editing, games, video, scientific code).</p>
 <p>Normally you would compile a C++ function like <code>int add(int a, int b) { return a + b; }</code> with a tool such as Emscripten. Below, the compiled bytes are written out by hand so you can run it right here.</p>
 
-<div class="play" data-title="Try it · calling WebAssembly from JS">
+<div class="play" data-file="wasm-demo.js" data-title="Try it · calling WebAssembly from JS">
 <textarea>
 // The bytes of a tiny compiled WebAssembly module that exports add(a, b).
 // (Normally these come from a file: await fetch("add.wasm"))
@@ -268,7 +268,7 @@ module.exports = router;
 </textarea>
 
 <h3>Keep secrets out of code</h3>
-<textarea class="code" data-lang="bash" data-file=".env (stays on your computer / server only)">
+<textarea class="code" data-lang="text" data-file=".env (stays on your computer / server only)">
 PORT=3000
 DB_PASS=correct-horse-battery
 API_KEY=change-me
@@ -299,7 +299,7 @@ const port = process.env.PORT || 3000;
 
 <p>Real projects use a testing library such as <b>Jest</b>. The box below builds a tiny version of <code>test()</code> and <code>expect()</code> so you can see what a test runner does.</p>
 
-<div class="play" data-title="Try it · how tests work">
+<div class="play" data-file="remark.test.js" data-title="Try it · how tests work">
 <textarea>
 // ---- the code we want to protect ----
 function computeRemark(grade) {
